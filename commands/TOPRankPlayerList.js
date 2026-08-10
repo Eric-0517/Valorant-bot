@@ -7,6 +7,7 @@ const {
   ComponentType 
 } = require('discord.js');
 const axios = require('axios');
+const cheerio = require('cheerio'); // 引入 cheerio 解析 HTML Token
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -29,7 +30,6 @@ module.exports = {
     const server = interaction.options.getInteger('server');
     const serverName = server === 1 ? '1服 (聖騎之王)' : '2服 (純潔之翼)';
 
-    // 建立帶有基礎 Header 的 Axios 實例
     const apiClient = axios.create({
       baseURL: 'https://aovweb.azurewebsites.net',
       timeout: 10000,
@@ -40,10 +40,10 @@ module.exports = {
       }
     });
 
-    // 修正後的 API 抓取邏輯
+    // 自動擷取 Anti-Forgery Token 並發送請求
     const fetchRankPage = async (page, serverId) => {
       try {
-        // Step 1: 預先存取頁面以獲取伺服器 Session / Cookie
+        // Step 1: 存取主頁取得 HTML 與 Cookie Session
         const initRes = await apiClient.get('/Ranking/TOPRankPlayer');
         const setCookieHeader = initRes.headers['set-cookie'];
         
@@ -52,20 +52,32 @@ module.exports = {
           cookieString = setCookieHeader.map(c => c.split(';')[0]).join('; ');
         }
 
-        // Step 2: 將參數封裝為 x-www-form-urlencoded 格式 (修復 400 錯誤關鍵)
+        // Step 2: 用 cheerio 解析 HTML 中的 __RequestVerificationToken
+        const $ = cheerio.load(initRes.data);
+        const token = $('input[name="__RequestVerificationToken"]').val();
+
+        // Step 3: 建立 Body 資料
         const formData = new URLSearchParams();
         formData.append('page', page.toString());
         formData.append('server', serverId.toString());
 
-        // Step 3: 使用 POST 發送請求並附帶 Ajax 識別與 Referer
+        const requestHeaders = {
+          'Cookie': cookieString,
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Origin': 'https://aovweb.azurewebsites.net',
+          'Referer': 'https://aovweb.azurewebsites.net/Ranking/TOPRankPlayer'
+        };
+
+        // 如果頁面中有抓到 防偽 Token，一併帶入 Header 與 Body
+        if (token) {
+          formData.append('__RequestVerificationToken', token);
+          requestHeaders['RequestVerificationToken'] = token;
+        }
+
+        // Step 4: 發送 POST 請求
         const response = await apiClient.post('/Ranking/TOPRankPlayerList', formData, {
-          headers: {
-            'Cookie': cookieString,
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            'X-Requested-With': 'XMLHttpRequest',
-            'Origin': 'https://aovweb.azurewebsites.net',
-            'Referer': 'https://aovweb.azurewebsites.net/Ranking/TOPRankPlayer'
-          }
+          headers: requestHeaders
         });
 
         return response.data;
@@ -91,7 +103,7 @@ module.exports = {
             new EmbedBuilder()
               .setColor('#FF4655')
               .setTitle('<a:cross:1535233642312507443> 抓取排位排行榜失敗')
-              .setDescription('無法正常從伺服器讀取數據，請確認 API 站台是否正常運作。'),
+              .setDescription('目標網站啟用動態 JavaScript 簽名驗證（Signature），無法直接透過 API 獲取資料。'),
           ],
           components: [],
         };
