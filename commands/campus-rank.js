@@ -11,7 +11,7 @@ const axios = require('axios');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('傳說查詢校園排行榜')
-    .setDescription('查詢《傳說對決》校園排行榜'),
+    .setDescription('查詢《傳說對決》校園排行榜-個人排行'),
 
   async execute(interaction) {
     await interaction.deferReply();
@@ -76,9 +76,9 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setColor('#5865F2')
-        .setTitle(`《傳說對決》校園英雄榜 - 全國個人榜`)
+        .setTitle(`《傳說對決》校園英雄榜-個人排名`)
         .setDescription(`**目前顯示第 ${startRank} - ${endRank} 名** (第 ${page} / ${maxPage} 頁)`)
-        .setFooter({ text: '數據來源: Garena 校園榜' })
+        .setFooter({ text: '由 eric 開發' })
         .setTimestamp();
 
       if (list.length === 0) {
