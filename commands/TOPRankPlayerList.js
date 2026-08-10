@@ -7,6 +7,49 @@ const {
   ComponentType 
 } = require('discord.js');
 const puppeteer = require('puppeteer-core');
+const fs = require('fs');
+const path = require('path');
+
+
+function findInstalledChrome() {
+  const possiblePaths = [
+    // 1. 嘗試系統預設 Chrome / Chromium
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium',
+    
+    // 2. 搜尋 Render 或本地使用者目錄下的 .cache/puppeteer
+    path.join(process.env.HOME || '/opt/render', '.cache', 'puppeteer'),
+    path.join(process.cwd(), '.cache', 'puppeteer')
+  ];
+
+  // 遞迴搜尋檔案名稱為 chrome 的執行檔
+  for (const basePath of possiblePaths) {
+    if (fs.existsSync(basePath)) {
+      // 若直接是可執行檔
+      if (fs.statSync(basePath).isFile()) return basePath;
+
+      // 若是目錄，進行遞迴搜尋
+      const stack = [basePath];
+      while (stack.length > 0) {
+        const current = stack.pop();
+        try {
+          const files = fs.readdirSync(current);
+          for (const file of files) {
+            const fullPath = path.join(current, file);
+            const stat = fs.statSync(fullPath);
+            if (stat.isDirectory()) {
+              stack.push(fullPath);
+            } else if (file === 'chrome' && (stat.mode & 0o111)) { // 尋找叫 chrome 且具備執行權限的檔案
+              return fullPath;
+            }
+          }
+        } catch (e) {}
+      }
+    }
+  }
+  return null;
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -32,22 +75,23 @@ module.exports = {
     const fetchRankPage = async (page, serverId) => {
       let browser = null;
       try {
-        // 💡 修復 1：使用 await 解析非同步路徑，並加上 fallback 備用路徑
-        let chromePath = '';
-        try {
-          chromePath = await puppeteer.executablePath();
-        } catch (e) {
-          // Render Linux 環境下，postinstall 安裝的預設 Chrome 二進位檔路徑
-          chromePath = '/opt/render/.cache/puppeteer/chrome/linux-122.0.6261.94/chrome-linux64/chrome';
+        
+        const chromePath = findInstalledChrome();
+
+        if (!chromePath) {
+          throw new Error('無法在系統或 .cache/puppeteer 中找到可用的 Chrome 執行檔！');
         }
+
+        console.log(`[Puppeteer] 使用 Chrome 路徑: ${chromePath}`);
 
         browser = await puppeteer.launch({
           headless: 'new',
-          executablePath: chromePath, // 傳入純字串路徑
+          executablePath: chromePath,
           args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
+            '--disable-gpu',
             '--disable-blink-features=AutomationControlled',
             '--disable-infobars',
             '--window-size=1920,1080'
