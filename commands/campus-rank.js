@@ -60,10 +60,19 @@ module.exports = {
       }
 
       // 提取玩家列表 (相容多種 API 回傳格式)
-      const list = data.data || data.list || data.items || (Array.isArray(data) ? data : []);
+      let rawList = data.data || data.list || data.items || (Array.isArray(data) ? data : []);
+
+      // 關鍵修復點 1：若 API 一次回傳全榜（100筆），依照頁碼切割；若 API 有分頁，則確保只取前 10 筆
+      let list = [];
+      if (rawList.length > 10) {
+        const startIndex = (page - 1) * 10;
+        list = rawList.slice(startIndex, startIndex + 10);
+      } else {
+        list = rawList.slice(0, 10);
+      }
 
       const startRank = (page - 1) * 10 + 1;
-      const endRank = page * 10;
+      const endRank = startRank + list.length - 1;
 
       const embed = new EmbedBuilder()
         .setColor('#5865F2')
@@ -91,6 +100,11 @@ module.exports = {
 
           rankText += `${medal} | **${name}**\n ${school} • 積分: \`${score}\`\n\n`;
         });
+
+        // 關鍵修復點 2：字數安全保護，確保不超過 Discord 1024 字元限制
+        if (rankText.length > 1020) {
+          rankText = rankText.substring(0, 1000) + '...\n*(內容過長已截斷)*';
+        }
 
         embed.addFields({
           name: '排行榜名單',
