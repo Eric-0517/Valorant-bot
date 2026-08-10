@@ -32,15 +32,22 @@ module.exports = {
     const fetchRankPage = async (page, serverId) => {
       let browser = null;
       try {
-        // 修正：動態取得由 postinstall 下載的 Chrome 執行檔路徑
-        const chromePath = puppeteer.executablePath();
+        // 💡 修復 1：使用 await 解析非同步路徑，並加上 fallback 備用路徑
+        let chromePath = '';
+        try {
+          chromePath = await puppeteer.executablePath();
+        } catch (e) {
+          // Render Linux 環境下，postinstall 安裝的預設 Chrome 二進位檔路徑
+          chromePath = '/opt/render/.cache/puppeteer/chrome/linux-122.0.6261.94/chrome-linux64/chrome';
+        }
 
         browser = await puppeteer.launch({
           headless: 'new',
-          executablePath: chromePath, // 指定精準路徑
+          executablePath: chromePath, // 傳入純字串路徑
           args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
             '--disable-blink-features=AutomationControlled',
             '--disable-infobars',
             '--window-size=1920,1080'
