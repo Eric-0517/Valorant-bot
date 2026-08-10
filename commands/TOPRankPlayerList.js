@@ -78,7 +78,7 @@ module.exports = {
           embeds: [
             new EmbedBuilder()
               .setColor('#FF4655')
-              .setTitle('<a:cross:1535233642312507443> 抓取排位排行榜失敗')
+              .setTitle('抓取排位排行榜失敗')
               .setDescription('<a:cross:1535233642312507443> 無法連接至排位 API，請稍後再試！'),
           ],
           components: [],
