@@ -37,18 +37,31 @@ module.exports = {
           'https://aovweb.azurewebsites.net/Ranking/TOPRankPlayerList',
           {
             params: {
-              page: page,
-              server: serverId,
+              // 補齊大小寫組合，確保與 .NET API 相容
+              page: String(page),
+              server: String(serverId),
+              Page: String(page),
+              Server: String(serverId)
             },
             headers: {
               'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+              'Accept': 'application/json, text/plain, */*',
+              'Accept-Language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+              'Referer': 'https://aovweb.azurewebsites.net/',
+              'X-Requested-With': 'XMLHttpRequest'
             },
+            timeout: 8000
           }
         );
         return response.data;
       } catch (error) {
-        console.error(`[AOV 排位 API 錯誤] Page ${page}, Server ${serverId}:`, error.message);
+        if (error.response) {
+          // 印出 Azure 詳細 400 錯誤訊息以利對症下藥
+          console.error(`[AOV 排位 API 400 錯誤資訊] Page ${page}, Server ${serverId}:`, error.response.data);
+        } else {
+          console.error(`[AOV 排位 API 網路錯誤] Page ${page}, Server ${serverId}:`, error.message);
+        }
         return null;
       }
     };
