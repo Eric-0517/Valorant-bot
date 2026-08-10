@@ -2,9 +2,7 @@ const puppeteer = require('puppeteer-core');
 const fs = require('fs');
 const path = require('path');
 
-
 function getExecutablePath() {
-  // 1. 優先尋找專案本地 .cache 下載好的 Chrome
   const localCachePath = path.join(process.cwd(), '.cache', 'puppeteer');
   if (fs.existsSync(localCachePath)) {
     const findChrome = (dir) => {
@@ -26,20 +24,15 @@ function getExecutablePath() {
       return null;
     };
     const cachedChrome = findChrome(localCachePath);
-    if (cachedChrome) {
-      console.log(`[Puppeteer] ✅ 成功使用本地快取瀏覽器: ${cachedChrome}`);
-      return cachedChrome;
-    }
+    if (cachedChrome) return cachedChrome;
   }
 
-  // 2. Linux 系統預設安裝路徑
   const linuxPaths = [
     '/usr/bin/google-chrome',
     '/usr/bin/chromium-browser',
     '/usr/bin/chromium',
   ];
 
-  // 3. Windows 本地開發環境路徑
   const windowsPaths = [
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
     'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
@@ -49,15 +42,11 @@ function getExecutablePath() {
   ];
 
   for (const executablePath of [...linuxPaths, ...windowsPaths]) {
-    if (executablePath && fs.existsSync(executablePath)) {
-      console.log(`[Puppeteer] ✅ 成功找到系統瀏覽器: ${executablePath}`);
-      return executablePath;
-    }
+    if (executablePath && fs.existsSync(executablePath)) return executablePath;
   }
 
-  throw new Error('未在系統中找到可用的 Chrome 或 Edge 瀏覽器，請確認 package.json 是否已加入 postinstall 指令。');
+  throw new Error('未在系統中找到可用的 Chrome 或 Edge 瀏覽器。');
 }
-
 
 function parsePasswordText(text) {
   const maps = ['零號大壩', '長弓溪谷', '巴克什', '航天基地', '潮汐監獄', 'AZ3'];
@@ -65,7 +54,7 @@ function parsePasswordText(text) {
 
   maps.forEach((map) => {
     
-    const regex = new RegExp(`${map}[\\s\\S]*?([A-Za-z0-9]{4,8}|N/A)`, 'i');
+    const regex = new RegExp(`${map}[\\s\\S]*?([0-9]{4,8}|[A-Za-z0-9]{6,8})`, 'i');
     const match = text.match(regex);
     results.push({
       map,
@@ -75,7 +64,6 @@ function parsePasswordText(text) {
 
   return results;
 }
-
 
 async function getDeltaPassword() {
   let browser = null;
@@ -103,34 +91,28 @@ async function getDeltaPassword() {
     await page.setRequestInterception(true);
     page.on('request', (req) => {
       const resourceType = req.resourceType();
-      if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+      if (['image', 'media', 'font'].includes(resourceType)) {
         req.abort();
       } else {
         req.continue();
       }
     });
 
-    // 設定 User-Agent 模擬真實瀏覽器
     await page.setUserAgent(
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     );
 
-   
     await page.goto('https://www.playdeltaforce.com/events/hq/zh-tw/', {
       waitUntil: 'domcontentloaded',
       timeout: 25000,
     });
 
-   
-    await new Promise((resolve) => setTimeout(resolve, 2500));
+    
+    await new Promise((resolve) => setTimeout(resolve, 4000));
 
-    // 抓取網頁渲染後的文字內容
     const pageText = await page.evaluate(() => document.body.innerText);
 
-    // 解析密碼
-    const passwords = parsePasswordText(pageText);
-
-    return passwords;
+    return parsePasswordText(pageText);
   } catch (error) {
     console.error('[Puppeteer 爬蟲發生錯誤]:', error);
     return null;
