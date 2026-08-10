@@ -2,7 +2,6 @@ const puppeteer = require('puppeteer-core');
 const fs = require('fs');
 const path = require('path');
 
-
 function getExecutablePath() {
   const localCachePath = path.join(process.cwd(), '.cache', 'puppeteer');
   if (fs.existsSync(localCachePath)) {
@@ -48,9 +47,8 @@ function getExecutablePath() {
     }
   }
 
-  throw new Error('未在系統中找到可用的 Chrome，請確認 package.json 是否已配置 postinstall 下載指令。');
+  throw new Error('未在系統中找到可用的 Chrome');
 }
-
 
 async function getDeltaPassword() {
   let browser = null;
@@ -74,7 +72,7 @@ async function getDeltaPassword() {
 
     const page = await browser.newPage();
 
-    // 攔截圖檔與媒體，加速載入
+    // 攔截媒體檔加速，但保留 API 數據請求
     await page.setRequestInterception(true);
     page.on('request', (req) => {
       const resourceType = req.resourceType();
@@ -97,22 +95,36 @@ async function getDeltaPassword() {
       timeout: 25000,
     });
 
-    // 延遲等待頁面動態渲染密碼內容
-    await new Promise((resolve) => setTimeout(resolve, 4500));
+    // 等待 3 秒確保 Vue / React DOM 渲染完成
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    // 除錯日誌
-    const bodyText = await page.evaluate(() => document.body.innerText);
-    console.log('[Puppeteer 爬蟲除錯] 抓到的頁面內文 (前 400 字):');
-    console.log(bodyText.substring(0, 400).replace(/\n+/g, ' '));
+    
+    await page.evaluate(() => {
+      const expandTargets = document.querySelectorAll('.password-box, .password-box .btn, .password-list-toggle, [class*="password"]');
+      expandTargets.forEach((el) => {
+        try { el.click(); } catch (e) {}
+      });
+    });
+
+    // 點擊後等待 1.5 秒讓展開動畫與內容填入完成
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     const passwords = await page.evaluate(() => {
       const mapNames = ['零號大壩', '長弓溪谷', '巴克什', '航天基地', '潮汐監獄', 'AZ3'];
       const results = [];
-      const bodyText = document.body.innerText;
+
+      // 優先抓取 password-box 或 password-list 區塊，若找不到則退回抓取全頁
+      const boxElement = document.querySelector('.password-box') || 
+                         document.querySelector('.password-list') || 
+                         document.querySelector('[class*="password"]');
+      
+      const targetText = boxElement ? boxElement.innerText : document.body.innerText;
 
       mapNames.forEach((map) => {
-        const reg = new RegExp(`${map}[\\s\\S]*?([A-Za-z0-9]{4,6})`, 'i');
-        const match = bodyText.match(reg);
+        // 在鎖定的區塊內尋找地圖名稱後方的 4 位純數字密碼
+        const reg = new RegExp(`${map}[\\s\\S]*?(\\d{4})`, 'i');
+        const match = targetText.match(reg);
+        
         if (match && match[1]) {
           results.push({
             map: map,
@@ -124,14 +136,13 @@ async function getDeltaPassword() {
       return results;
     });
 
-    console.log('[Puppeteer 爬蟲除錯] 正則解析結果:', JSON.stringify(passwords));
+    console.log('[Puppeteer 密碼區塊抓取結果]:', JSON.stringify(passwords));
 
     // 驗證數據有效性
     if (passwords && passwords.length > 0 && isValidCodes(passwords)) {
       return passwords;
     }
 
-    console.warn('[Puppeteer 爬蟲除錯] isValidCodes 驗證失敗 (可能全部密碼相同或無效)');
     return null;
   } catch (error) {
     console.error('[puppeteer-core 爬蟲錯誤]:', error.message);
@@ -143,14 +154,17 @@ async function getDeltaPassword() {
   }
 }
 
-
 function isValidCodes(list) {
   if (!list || list.length === 0) return false;
+  const currentYear = new Date().getFullYear().toString();
+  
+  // 檢查是否所有地圖都被年份 2026 覆蓋，或是全部重複
   const firstCode = list[0].code;
+  if (firstCode === currentYear) return false;
+
   const isAllSame = list.every((item) => item.code === firstCode);
   return !isAllSame;
 }
-
 
 function parsePasswordText(text) {
   if (!text) return [];
@@ -172,7 +186,6 @@ function parsePasswordText(text) {
 
   return passwordList;
 }
-
 
 module.exports = {
   getDeltaPassword,
