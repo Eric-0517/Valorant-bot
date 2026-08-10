@@ -6,8 +6,7 @@ const {
   ButtonStyle, 
   ComponentType 
 } = require('discord.js');
-const axios = require('axios');
-const cheerio = require('cheerio'); // 引入 cheerio 解析 HTML Token
+const puppeteer = require('puppeteer');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -30,63 +29,59 @@ module.exports = {
     const server = interaction.options.getInteger('server');
     const serverName = server === 1 ? '1服 (聖騎之王)' : '2服 (純潔之翼)';
 
-    const apiClient = axios.create({
-      baseURL: 'https://aovweb.azurewebsites.net',
-      timeout: 10000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept': 'application/json, text/javascript, */*; q=0.01',
-        'Accept-Language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
-      }
-    });
-
-    // 自動擷取 Anti-Forgery Token 並發送請求
+    // 使用 Puppeteer 繞過 FingerprintJS / Signature 加密
     const fetchRankPage = async (page, serverId) => {
+      let browser = null;
       try {
-        // Step 1: 存取主頁取得 HTML 與 Cookie Session
-        const initRes = await apiClient.get('/Ranking/TOPRankPlayer');
-        const setCookieHeader = initRes.headers['set-cookie'];
-        
-        let cookieString = '';
-        if (setCookieHeader) {
-          cookieString = setCookieHeader.map(c => c.split(';')[0]).join('; ');
-        }
-
-        // Step 2: 用 cheerio 解析 HTML 中的 __RequestVerificationToken
-        const $ = cheerio.load(initRes.data);
-        const token = $('input[name="__RequestVerificationToken"]').val();
-
-        // Step 3: 建立 Body 資料
-        const formData = new URLSearchParams();
-        formData.append('page', page.toString());
-        formData.append('server', serverId.toString());
-
-        const requestHeaders = {
-          'Cookie': cookieString,
-          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-          'X-Requested-With': 'XMLHttpRequest',
-          'Origin': 'https://aovweb.azurewebsites.net',
-          'Referer': 'https://aovweb.azurewebsites.net/Ranking/TOPRankPlayer'
-        };
-
-        // 如果頁面中有抓到 防偽 Token，一併帶入 Header 與 Body
-        if (token) {
-          formData.append('__RequestVerificationToken', token);
-          requestHeaders['RequestVerificationToken'] = token;
-        }
-
-        // Step 4: 發送 POST 請求
-        const response = await apiClient.post('/Ranking/TOPRankPlayerList', formData, {
-          headers: requestHeaders
+        browser = await puppeteer.launch({
+          headless: 'new',
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-blink-features=AutomationControlled' // 隱藏無頭特徵
+          ]
         });
 
-        return response.data;
+        const browserPage = await browser.newPage();
+
+        // 設置防爬偽裝 Header
+        await browserPage.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+
+        // 先載入主頁，讓瀏覽器自動執行 signature.js 與 FingerprintJS
+        await browserPage.goto('https://aovweb.azurewebsites.net/Ranking/TOPRankPlayer', {
+          waitUntil: 'networkidle2',
+          timeout: 15000
+        });
+
+        // 在瀏覽器 context 內執行原生 AJAX 請求（會自動帶上 signature.js 產生的驗證碼）
+        const result = await browserPage.evaluate(async (targetPage, targetServer) => {
+          try {
+            const formData = new URLSearchParams();
+            formData.append('page', targetPage.toString());
+            formData.append('server', targetServer.toString());
+
+            const res = await fetch('/Ranking/TOPRankPlayerList', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest'
+              },
+              body: formData
+            });
+
+            if (!res.ok) return null;
+            return await res.json();
+          } catch (e) {
+            return null;
+          }
+        }, page, serverId);
+
+        await browser.close();
+        return result;
+
       } catch (error) {
-        if (error.response) {
-          console.error(`[AOV API 錯誤] Status ${error.response.status}`);
-        } else {
-          console.error(`[AOV API 錯誤] Page ${page}, Server ${serverId}:`, error.message);
-        }
+        console.error(`[Puppeteer 抓取失敗] Page ${page}, Server ${serverId}:`, error.message);
+        if (browser) await browser.close();
         return null;
       }
     };
@@ -103,7 +98,7 @@ module.exports = {
             new EmbedBuilder()
               .setColor('#FF4655')
               .setTitle('<a:cross:1535233642312507443> 抓取排位排行榜失敗')
-              .setDescription('目標網站啟用動態 JavaScript 簽名驗證（Signature），無法直接透過 API 獲取資料。'),
+              .setDescription('目標網站遠端連線逾時或回應異常，請稍後再試。'),
           ],
           components: [],
         };
