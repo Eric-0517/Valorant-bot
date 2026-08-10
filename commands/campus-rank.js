@@ -78,7 +78,7 @@ module.exports = {
         .setColor('#5865F2')
         .setTitle(`《傳說對決》校園英雄榜-個人排名`)
         .setDescription(`**目前顯示第 ${startRank} - ${endRank} 名** (第 ${page} / ${maxPage} 頁)`)
-        .setFooter({ text: '由 eric 開發' })
+        .setFooter({ text: '由 Eric 開發' })
         .setTimestamp();
 
       if (list.length === 0) {
