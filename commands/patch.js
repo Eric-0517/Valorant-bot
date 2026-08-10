@@ -4,7 +4,7 @@ const axios = require('axios');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('特戰查詢更新日誌')
-    .setDescription('查詢《特戰英豪》最新版本更新日誌 (Patch Notes)'),
+    .setDescription('查詢《特戰英豪》最新版本更新日誌'),
 
   async execute(interaction) {
     await interaction.deferReply();
