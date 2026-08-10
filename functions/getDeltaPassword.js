@@ -2,9 +2,7 @@ const puppeteer = require('puppeteer-core');
 const fs = require('fs');
 const path = require('path');
 
-/**
- * 自動偵測系統或專案本地 (.cache) 中的 Chrome 執行檔路徑
- */
+
 function getExecutablePath() {
   // 1. 優先尋找專案本地 .cache 下載好的 Chrome
   const localCachePath = path.join(process.cwd(), '.cache', 'puppeteer');
@@ -60,28 +58,25 @@ function getExecutablePath() {
   throw new Error('未在系統中找到可用的 Chrome 或 Edge 瀏覽器，請確認 package.json 是否已加入 postinstall 指令。');
 }
 
-/**
- * 簡易地圖密碼文字解析器 (用於 Fallback 或預處理)
- */
+
 function parsePasswordText(text) {
   const maps = ['零號大壩', '長弓溪谷', '巴克什', '航天基地', '潮汐監獄', 'AZ3'];
   const results = [];
 
   maps.forEach((map) => {
-    const regex = new RegExp(`${map}\\s*([A-Za-z0-9]+|N/A)`, 'i');
+    
+    const regex = new RegExp(`${map}[\\s\\S]*?([A-Za-z0-9]{4,8}|N/A)`, 'i');
     const match = text.match(regex);
     results.push({
       map,
-      code: match ? match[1] : 'N/A',
+      code: match && match[1] ? match[1] : 'N/A',
     });
   });
 
   return results;
 }
 
-/**
- * 核心爬蟲函數：前往三角洲官網抓取最新密碼
- */
+
 async function getDeltaPassword() {
   let browser = null;
   try {
@@ -103,17 +98,31 @@ async function getDeltaPassword() {
     });
 
     const page = await browser.newPage();
+
     
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      const resourceType = req.resourceType();
+      if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+
     // 設定 User-Agent 模擬真實瀏覽器
     await page.setUserAgent(
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     );
 
-    // 前往活動網頁 (設定 Timeout 為 30 秒)
+   
     await page.goto('https://www.playdeltaforce.com/events/hq/zh-tw/', {
-      waitUntil: 'networkidle2',
-      timeout: 30000,
+      waitUntil: 'domcontentloaded',
+      timeout: 25000,
     });
+
+   
+    await new Promise((resolve) => setTimeout(resolve, 2500));
 
     // 抓取網頁渲染後的文字內容
     const pageText = await page.evaluate(() => document.body.innerText);
@@ -132,7 +141,6 @@ async function getDeltaPassword() {
   }
 }
 
-// 💡【關鍵修正】務必使用物件解構格式匯出！
 module.exports = {
   getDeltaPassword,
   parsePasswordText,
