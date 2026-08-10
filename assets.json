@@ -1,0 +1,422 @@
+{
+  "ranks": {
+    "0": {
+      "name": "未參加",
+      "img": "https://bit.ly/3gASVEZ"
+    },
+    "3": {
+      "name": "鐵牌 1",
+      "img": "https://bit.ly/3vhTurm"
+    },
+    "4": {
+      "name": "鐵牌 2",
+      "img": "https://bit.ly/2PiWG6L"
+    },
+    "5": {
+      "name": "鐵牌 3",
+      "img": "https://bit.ly/3gxUgMV"
+    },
+    "6": {
+      "name": "銅牌 1",
+      "img": "https://bit.ly/3eoNKW2"
+    },
+    "7": {
+      "name": "銅牌 2",
+      "img": "https://bit.ly/3xv620L"
+    },
+    "8": {
+      "name": "銅牌 3",
+      "img": "https://static.wikia.nocookie.net/valorant/images/a/a8/TX_CompetitiveTier_Large_8.png/revision/latest/scale-to-width-down/250?cb=20200623203313"
+    },
+    "9": {
+      "name": "銀牌 1",
+      "img": "https://bit.ly/3gzYSlJ"
+    },
+    "10": {
+      "name": "銀牌 2",
+      "img": "https://bit.ly/3xpnpzJ"
+    },
+    "11": {
+      "name": "銀牌 3",
+      "img": "https://bit.ly/3njh7Np"
+    },
+    "12": {
+      "name": "金牌 1",
+      "img": "https://bit.ly/3sQ4sTg"
+    },
+    "13": {
+      "name": "金牌 2",
+      "img": "https://bit.ly/3tOjB9f"
+    },
+    "14": {
+      "name": "金牌 3",
+      "img": "https://bit.ly/3ngODnL"
+    },
+    "15": {
+      "name": "白金 1",
+      "img": "https://bit.ly/3aBZVha"
+    },
+    "16": {
+      "name": "白金 2",
+      "img": "https://bit.ly/3dNODZ0"
+    },
+    "17": {
+      "name": "白金 3",
+      "img": "'https://bit.ly/3gAZGqz"
+    },
+    "18": {
+      "name": "鑽石 1",
+      "img": "https://bit.ly/3gBXA9W"
+    },
+    "19": {
+      "name": "鑽石 2",
+      "img": "https://bit.ly/3aybLJ6"
+    },
+    "20": {
+      "name": "鑽石 3",
+      "img": "'https://bit.ly/3u1Hevb"
+    },
+    "21": {
+      "name": "神話",
+      "img": "https://bit.ly/3tPKpWA"
+    },
+    "24": {
+      "name": "輻能戰魂",
+      "img": "https://bit.ly/3gFlVLQ"
+    }
+  },
+  "agents": {
+    "5f8d3a7f-467b-97f3-062c-13acf203c006": {
+      "name": "判奇",
+      "img": "https://static.wikia.nocookie.net/valorant/images/5/53/Breach_icon.png/revision/latest/scale-to-width-down/99?cb=20201128234328"
+    },
+    "f94c3b30-42be-e959-889c-5aa313dba261": {
+      "name": "內茲",
+      "img": "'https://static.wikia.nocookie.net/valorant/images/9/9c/Raze_icon.png/revision/latest/scale-to-width-down/99?cb=20201128234400"
+    },
+    "add6443a-41bd-e414-f6ad-e58d267f4e95": {
+      "name": "婕提",
+      "img": "https://static.wikia.nocookie.net/valorant/images/3/35/Jett_icon.png/revision/latest/scale-to-width-down/185?cb=20201128234156"
+    },
+    "117ed9e3-49f3-6512-3ccf-0cada7e3823b": {
+      "name": "瑟符",
+      "img": "'https://static.wikia.nocookie.net/valorant/images/8/88/Cypher_icon.png/revision/latest/scale-to-width-down/99?cb=20201128234211"
+    },
+    "320b2a48-4d9b-a075-30f1-1f93a9b638fa": {
+      "name": "蘇法",
+      "img": "https://titles.trackercdn.com/valorant-api/agents/320b2a48-4d9b-a075-30f1-1f93a9b638fa/displayicon.png"
+    },
+    "707eab51-4836-f488-046a-cda6bf494859": {
+      "name": "薇蝮",
+      "img": "'https://static.wikia.nocookie.net/valorant/images/5/5f/Viper_icon.png/revision/latest/scale-to-width-down/99?cb=20201128234408"
+    },
+    "eb93336a-449b-9c1b-0a54-a891f7921d69": {
+      "name": "菲尼克斯",
+      "img": "https://titles.trackercdn.com/valorant-api/agents/eb93336a-449b-9c1b-0a54-a891f7921d69/displayicon.png"
+    },
+    "9f0d8ba9-4140-b941-57d3-a7ad57c6b417": {
+      "name": "布史東",
+      "img": "https://titles.trackercdn.com/valorant-api/agents/9f0d8ba9-4140-b941-57d3-a7ad57c6b417/displayicon.png"
+    },
+    "569fdd95-4d10-43ab-ca70-79becc718b46": {
+      "name": "聖祈",
+      "img": "https://static.wikia.nocookie.net/valorant/images/7/74/Sage_icon.png/revision/latest/scale-to-width-down/185?cb=20201128234057"
+    },
+    "a3bfb853-43b2-7238-a4f1-ad90e9e46bcc": {
+      "name": "雷娜",
+      "img": "https://static.wikia.nocookie.net/valorant/images/b/b0/Reyna_icon.png/revision/latest/scale-to-width-down/99?cb=20200607180311"
+    },
+    "8e253930-4c05-31dd-1b6c-968525494517": {
+      "name": "歐門",
+      "img": "https://static.wikia.nocookie.net/valorant/images/b/b0/Omen_icon.png/revision/latest/scale-to-width-down/99?cb=20201128234318"
+    },
+    "1e58de9c-4950-5125-93e9-a0aee9f98746": {
+      "name": "凱宙",
+      "img": "https://static.wikia.nocookie.net/valorant/images/1/15/Killjoy_icon.png/revision/latest/scale-to-width-down/99?cb=20200805002141"
+    },
+    "6f2a04ca-43e0-be17-7f36-b3908627744d": {
+      "name": "絲凱",
+      "img": "https://static.wikia.nocookie.net/valorant/images/3/33/Skye_icon.png/revision/latest/scale-to-width-down/99?cb=20201128234628"
+    },
+    "7f94d92c-4234-0a36-9646-3a87eb8b5c89": {
+      "name": "夜戮",
+      "img": "https://static.wikia.nocookie.net/valorant/images/d/d4/Yoru_icon.png/revision/latest/scale-to-width-down/99?cb=20210112211830"
+    },
+    "41fb69c1-4189-7b37-f117-bcaf1e96f1bf": {
+      "name": "亞星卓",
+      "img": "https://static.wikia.nocookie.net/valorant/images/0/08/Astra_icon.png/revision/latest/scale-to-width-down/99?cb=20210302164234"
+    }
+  },
+  "maps": {
+    "Bind": {
+      "name": "劫境之地",
+      "imgWon": "https://cdn.discordapp.com/attachments/834195818080108564/836293456003072020/bindVictory.jpg",
+      "imgLost": "https://cdn.discordapp.com/attachments/834195818080108564/836293453943275540/bindDefeat.jpg",
+      "imgDraw": "https://cdn.discordapp.com/attachments/834195818080108564/836293455277195284/bindDraw.jpg",
+      "img": "https://cdn.discordapp.com/attachments/834195818080108564/835586366720966797/bindImage.png"
+    },
+    "Split": {
+      "name": "雙塔迷城",
+      "imgWon": "https://cdn.discordapp.com/attachments/834195818080108564/836293603235594240/splitVictory.jpg",
+      "imgLost": "https://cdn.discordapp.com/attachments/834195818080108564/836293604447354930/splitDefeat.jpg",
+      "imgDraw": "https://cdn.discordapp.com/attachments/834195818080108564/836293606045777961/splitDraw.jpg",
+      "img": "https://cdn.discordapp.com/attachments/834195818080108564/835588130857811998/splitImage.png"
+    },
+    "Haven": {
+      "name": "遺落境地",
+      "imgWon": "https://cdn.discordapp.com/attachments/834195818080108564/836293469050765433/havenVictory.jpg",
+      "imgLost": "https://cdn.discordapp.com/attachments/834195818080108564/836293469630627900/havenDefeat.jpg",
+      "imgDraw": "https://cdn.discordapp.com/attachments/834195818080108564/836293471915868218/havenDraw.jpg",
+      "img": "https://cdn.discordapp.com/attachments/834195818080108564/835588132224106576/havenImage.png"
+    },
+    "Ascent": {
+      "name": "義境空島",
+      "imgWon": "https://cdn.discordapp.com/attachments/834195818080108564/836293439770984500/ascentVictory.jpg",
+      "imgLost": "https://cdn.discordapp.com/attachments/834195818080108564/836293440891256862/ascentDefeat.jpg",
+      "imgDraw": "https://cdn.discordapp.com/attachments/834195818080108564/836293442102624308/ascentDraw.jpg",
+      "img": "https://cdn.discordapp.com/attachments/834195818080108564/835588133453955082/ascentImage.png"
+    },
+    "Icebox": {
+      "name": "極地寒港",
+      "imgWon": "https://cdn.discordapp.com/attachments/834195818080108564/836293576018886746/iceboxVictory.jpg",
+      "imgLost": "https://cdn.discordapp.com/attachments/834195818080108564/836293532364570695/iceboxDefeat.jpg",
+      "imgDraw": "https://cdn.discordapp.com/attachments/834195818080108564/836293588001488936/iceboxDraw.jpg",
+      "img": "https://cdn.discordapp.com/attachments/834195818080108564/835588129696120863/iceboxImage.png"
+    },
+    "Breeze": {
+      "name": "熱帶樂園",
+      "imgWon": "https://cdn.discordapp.com/attachments/834195818080108564/836970400088457264/breezeVictory.jpg",
+      "imgLost": "https://cdn.discordapp.com/attachments/834195818080108564/836970397344858154/breezeDefeat.jpg",
+      "imgDraw": "https://cdn.discordapp.com/attachments/834195818080108564/836970398692016188/breezeDraw.jpg",
+      "img": "https://cdn.discordapp.com/attachments/834195818080108564/839591211358748713/breezeImage.png"
+    },
+    "Fracture": {
+      "name": "天漠之峽",
+      "imgWon": "https://cdn.discordapp.com/attachments/960747086918344734/1145901663475998730/fractureVictory.jpg",
+      "imgLost": "https://cdn.discordapp.com/attachments/960747086918344734/1145901663987703898/fractureDefeat.jpg",
+      "imgDraw": "https://cdn.discordapp.com/attachments/960747086918344734/1145901664298086400/fractureDraw.jpg",
+      "img": "https://cdn.discordapp.com/attachments/960747086918344734/1145901663731847318/fracture.jpg"
+    },
+    "Lotus": {
+      "name": "蓮華古城",
+      "imgWon": "https://cdn.discordapp.com/attachments/960747086918344734/1145850029001687090/lotusVictory.jpg",
+      "imgLost": "https://cdn.discordapp.com/attachments/960747086918344734/1145850028204765224/lotusDefeat.jpg",
+      "imgDraw": "https://cdn.discordapp.com/attachments/960747086918344734/1145850028460613765/lotusDraw.jpg",
+      "img": "https://cdn.discordapp.com/attachments/960747086918344734/1145850362478207007/lotus.jpg"
+    },
+    "Pearl": {
+      "name": "深海遺珠",
+      "imgWon": "https://cdn.discordapp.com/attachments/960747086918344734/1145850003252858920/pearlVictory.jpg",
+      "imgLost": "https://cdn.discordapp.com/attachments/960747086918344734/1145850002439163935/pearlDefeat.jpg",
+      "imgDraw": "https://cdn.discordapp.com/attachments/960747086918344734/1145850002741141574/pearlDraw.jpg",
+      "img": "https://cdn.discordapp.com/attachments/960747086918344734/1145850362075545640/pearl.jpg"
+    },
+    "Unknown": {
+      "name": "未知",
+      "imgWon": "https://cdn.discordapp.com/attachments/834195818080108564/924407916973395968/victory.jpg",
+      "imgLost": "https://cdn.discordapp.com/attachments/834195818080108564/924407917233463386/defeat.jpg",
+      "imgDraw": "https://cdn.discordapp.com/attachments/834195818080108564/924407916730150932/draw.jpg",
+      "img": "https://cdn.discordapp.com/attachments/834195818080108564/924408585671295016/unknown.jpg"
+    }
+  },
+  "rankEmojis": {
+    "Unranked": {
+      "emoji": "<:unranked:1535208948880121876>"
+    },
+    "Unrated": {
+      "emoji": "<:unranked:1535208948880121876>"
+    },
+    "Iron 1": {
+      "emoji": "<:Iron_1_Rank:1533741959301038161>"
+    },
+    "Iron 2": {
+      "emoji": "<:Iron_2_Rank:1533741961100529815>"
+    },
+    "Iron 3": {
+      "emoji": "<:Iron_3_Rank:1533741962694365299>"
+    },
+    "Bronze 1": {
+      "emoji": "<:Bronze_1_Rank:1533741935607549992>"
+    },
+    "Bronze 2": {
+      "emoji": "<:Bronze_2_Rank:1533741937469685780>"
+    },
+    "Bronze 3": {
+      "emoji": "<:Bronze_3_Rank:1533741939227230318>"
+    },
+    "Silver 1": {
+      "emoji": "<:Silver_1_Rank:1533741972723077261>"
+    },
+    "Silver 2": {
+      "emoji": "<:Silver_2_Rank:1533741974547599481>"
+    },
+    "Silver 3": {
+      "emoji": "<:Silver_3_Rank:1533741976128721047>"
+    },
+    "Gold 1": {
+      "emoji": "<:Gold_1_Rank:1533741946198163536>"
+    },
+    "Gold 2": {
+      "emoji": "<:Gold_2_Rank:1533741947947061388>"
+    },
+    "Gold 3": {
+      "emoji": "<:Gold_3_Rank:1533741950103064688>"
+    },
+    "Platinum 1": {
+      "emoji": "<:Platinum_1_Rank:1533741964577476669>"
+    },
+    "Platinum 2": {
+      "emoji": "<:Platinum_2_Rank:1533741967081607188>"
+    },
+    "Platinum 3": {
+      "emoji": "<:Platinum_3_Rank:1533741969585471518>"
+    },
+    "Diamond 1": {
+      "emoji": "<:Diamond_1_Rank:1533741941106151484>"
+    },
+    "Diamond 2": {
+      "emoji": "<:Diamond_2_Rank:1533741942834200606>"
+    },
+    "Diamond 3": {
+      "emoji": "<:Diamond_3_Rank:1533741944491086005>"
+    },
+    "Ascendant 1": {
+      "emoji": "<:Ascendant_1_Rank:1533741930754871347>"
+    },
+    "Ascendant 2": {
+      "emoji": "<:Ascendant_2_Rank:1533741932457623665>"
+    },
+    "Ascendant 3": {
+      "emoji": "<:Ascendant_3_Rank:1533741933992738877>"
+    },
+    "Immortal": {
+      "emoji": "<:Immortal_1_Rank:1533741952015536169>"
+    },
+    "Immortal 1": {
+      "emoji": "<:Immortal_1_Rank:1533741952015536169>"
+    },
+    "Immortal 2": {
+      "emoji": "<:Immortal_2_Rank:1533741955425636403>"
+    },
+    "Immortal 3": {
+      "emoji": "<:Immortal_3_Rank:1533741957652676742>"
+    },
+    "Radiant": {
+      "emoji": "<:Radiant_Rank:1533741971103940730>"
+    }
+  },
+  "agentEmojis": {
+    "Astra": {
+      "emoji": "<:astra:1535231845556555896>"
+    },
+    "Breach": {
+      "emoji": "<:breach:1535231843639758930>"
+    },
+    "Brimstone": {
+      "emoji": "<:brimstone:1535231841886281799>"
+    },
+    "Cypher": {
+      "emoji": "<:cypher:1535231839508234351>"
+    },
+    "Jett": {
+      "emoji": "<:jett:1535231837767598111>"
+    },
+    "Killjoy": {
+      "emoji": "<:killjoy:1535231835968110643>"
+    },
+    "Omen": {
+      "emoji": "<:omen:1535231834009636874>"
+    },
+    "Phoenix": {
+      "emoji": "<:phoenix:1535231832042504283>"
+    },
+    "Raze": {
+      "emoji": "<:raze:1535231830352072764>"
+    },
+    "Reyna": {
+      "emoji": "<:reyna:1535231828531613827>"
+    },
+    "Sage": {
+      "emoji": "<:sage:1535231826761883708>"
+    },
+    "Skye": {
+      "emoji": "<:skye:1535231824840892497>"
+    },
+    "Sova": {
+      "emoji": "<:sova:1535231822739284039>"
+    },
+    "Viper": {
+      "emoji": "<:viper:1535231820717883413>"
+    },
+    "Yoru": {
+      "emoji": "<:yoru:1535231817676750902>"
+    },
+    "KAY/O": {
+      "emoji": "<:kayo:1535231815772676178>"
+    },
+    "Chamber": {
+      "emoji": "<:chamber:1535231813386244166>"
+    },
+    "Neon": {
+      "emoji": "<:neon:1535231811653992458>"
+    },
+    "Fade": {
+      "emoji": "<:fade:1535231809443332118>"
+    },
+    "Harbor": {
+      "emoji": "<:harbor:1535231806486351953>"
+    },
+    "Gekko": {
+      "emoji": "<:gekko:1535231804049457162>"
+    },
+    "Deadlock": {
+      "emoji": "<:deadlock:1535231802082459769>"
+    }
+  },
+  "modeEmojis": {
+    "Competitive": {
+      "emoji": "<:normal:1535209463122894958>"
+    },
+    "Unrated": {
+      "emoji": "<:normal:1535209463122894958>"
+    },
+    "Spike Rush": {
+      "emoji": "<:spikerush:1535209742828437654>"
+    },
+    "Deathmatch": {
+      "emoji": "<:deathmatch:1535209913356386344>"
+    },
+    "Escalation": {
+      "emoji": "<:escalation:1535210075289817179>"
+    }
+  },
+  "mapEmojis": {
+    "Ascent": {
+      "emoji": "<:ascent:1535211212860559370>"
+    },
+    "Bind": {
+      "emoji": "<:bind:1535211210935377970>"
+    },
+    "Breeze": {
+      "emoji": "<:breeze:1535211209035489360>"
+    },
+    "Haven": {
+      "emoji": "<:haven:1535211207185670194>"
+    },
+    "Icebox": {
+      "emoji": "<:icebox:1535211205273190400>"
+    },
+    "Split": {
+      "emoji": "<:split:1535211202773258282>"
+    },
+    "Fracture": {
+      "emoji": "<:fracture:1535211200495882281>"
+    },
+    "Pearl": {
+      "emoji": "<:pearl:1535211198059122768>"
+    },
+    "Lotus": {
+      "emoji": "<:lotusmap:1535211195718438913>"
+    }
+  }
+}
