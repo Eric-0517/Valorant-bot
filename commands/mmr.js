@@ -8,7 +8,7 @@ const VAPI = new ValorantAPI(apiKey);
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('特戰 玩家mmr查詢')
+    .setName('特戰玩家mmr查詢')
     .setDescription('查詢 Valorant 玩家即時牌位與 MMR')
     .addStringOption((option) =>
       option.setName('name').setDescription('玩家名稱 (例如: eric0517)').setRequired(true)
