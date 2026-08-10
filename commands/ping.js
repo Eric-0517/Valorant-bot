@@ -8,7 +8,7 @@ module.exports = {
 
   async execute(interaction) {
     // 1. 先發送暫時的回應以計算 API 延遲 (WS Ping & Roundtrip Ping)
-    const sent = await interaction.deferReply({ fetchReply: true, ephemeral: true });
+    const sent = await interaction.deferReply({ fetchReply: true});
 
     // --- 計算 Ping ---
     const roundtripPing = sent.createdTimestamp - interaction.createdTimestamp;
