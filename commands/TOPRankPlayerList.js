@@ -99,54 +99,39 @@ module.exports = {
 
         await browserPage.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
 
-        // 先造訪主要排行榜頁面以取得對應驗證 Cookie (Turnstile / Antiforgery)
+        // 造訪主要頁面以獲取認證 Cookie
         await browserPage.goto('https://aovweb.azurewebsites.net/Ranking/TOPRankPlayer', {
           waitUntil: 'networkidle2',
           timeout: 25000
         });
 
-        // 檢查是否卡在防爬/驗證頁面，若是則重整
-        let isErrorPage = await browserPage.evaluate(() => {
-          return document.body.innerText.includes('發生了某些錯誤') || document.body.innerText.includes('請重新整理');
-        });
-
-        let retryCount = 0;
-        while (isErrorPage && retryCount < 2) {
-          console.log(`[AOV 爬蟲] 觸發防爬頁面，自動嘗試重整 (${retryCount + 1}/2)...`);
-          await browserPage.reload({ waitUntil: 'networkidle2', timeout: 10000 }).catch(() => {});
-          isErrorPage = await browserPage.evaluate(() => {
-            return document.body.innerText.includes('發生了某些錯誤');
-          });
-          retryCount++;
-        }
+        
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
        
         const result = await browserPage.evaluate(async (targetPage, targetServer) => {
           try {
-            // 對齊真實抓包格式：GET /Ranking/TOPRankPlayerList?page=X&server=Y
             const targetUrl = `/Ranking/TOPRankPlayerList?page=${targetPage}&server=${targetServer}`;
 
             const res = await fetch(targetUrl, {
               method: 'GET',
               headers: {
                 'Accept': '*/*',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'Referer': 'https://aovweb.azurewebsites.net/Ranking/TOPRankPlayer'
               }
             });
 
             if (!res.ok) return null;
 
-            // 判斷回應是 JSON 還是 HTML 片段
-            const contentType = res.headers.get('content-type') || '';
-            if (contentType.includes('application/json')) {
-              return await res.json();
-            } else {
-              const textData = await res.text();
-              try {
-                return JSON.parse(textData);
-              } catch (e) {
-                return { rawText: textData };
-              }
+            const textData = await res.text();
+            
+            // 嘗試解析 JSON
+            try {
+              return JSON.parse(textData);
+            } catch (e) {
+              // 若非 JSON，可能是 HTML 片段，回傳交由後續處理
+              return { rawHtml: textData };
             }
           } catch (e) {
             return null;
@@ -175,14 +160,19 @@ module.exports = {
             new EmbedBuilder()
               .setColor('#FF4655')
               .setTitle('<a:cross:1535233642312507443> 抓取排位排行榜失敗')
-              .setDescription('目標網站遠端連線逾時或觸發防爬機制，請稍後再試。'),
+              .setDescription('遠端連線逾時或觸發防爬機制，請稍後再試。(簡單說就是被擋了)'),
           ],
           components: [],
         };
       }
 
-      // 解析相容各式 API 格式
-      let rawList = data.data || data.list || data.items || (Array.isArray(data) ? data : []);
+      // 解析相容各式 API 結構
+      let rawList = [];
+      if (Array.isArray(data)) {
+        rawList = data;
+      } else if (data.data || data.list || data.items) {
+        rawList = data.data || data.list || data.items;
+      }
 
       let list = [];
       if (rawList.length > 10) {
