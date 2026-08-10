@@ -28,8 +28,8 @@ const getRow = (id, pages, embeds, randomID) => {
   );
   row.addComponents(
     new ButtonBuilder()
-      .setLabel('官方網站')
-      .setURL('https://valostats.netlify.app/')
+      .setLabel('開發者')
+      .setURL('https://www.instagram.com/eric._.0517_/')
       .setStyle(ButtonStyle.Link)
   );
 
@@ -70,8 +70,8 @@ const editGetRow = (id, pages, embeds, randomID, timedOut = false) => {
   );
   row.addComponents(
     new ButtonBuilder()
-      .setLabel('官方網站')
-      .setURL('https://valostats.netlify.app/')
+      .setLabel('開發者')
+      .setURL('https://www.instagram.com/eric._.0517_/')
       .setStyle(ButtonStyle.Link)
   );
 
