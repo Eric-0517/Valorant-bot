@@ -44,13 +44,13 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setColor(isNormal ? '#00FF99' : '#FF4655')
-        .setTitle(`🌐 《特戰英豪》伺服器狀態 - [ ${region.toUpperCase()} ]`)
+        .setTitle(`《特戰英豪》伺服器狀態 - [ ${region.toUpperCase()} ]`)
         .setDescription(
           isNormal
             ? '🟢 **目前所有伺服器服務運作正常！**'
             : '⚠️ **伺服器目前有維護或異常事件：**'
         )
-        .setFooter({ text: '數據來源: HenrikDev API' })
+        .setFooter({ text: '由 Eric 開發' })
         .setTimestamp();
 
       if (maintanances.length > 0) {
