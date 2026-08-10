@@ -10,26 +10,20 @@ const puppeteer = require('puppeteer-core');
 const fs = require('fs');
 const path = require('path');
 
-
+// 自動搜尋套件下載或系統中的 Chrome 執行檔
 function findInstalledChrome() {
   const possiblePaths = [
-    // 1. 嘗試系統預設 Chrome / Chromium
     '/usr/bin/google-chrome',
     '/usr/bin/chromium-browser',
     '/usr/bin/chromium',
-    
-    // 2. 搜尋 Render 或本地使用者目錄下的 .cache/puppeteer
     path.join(process.env.HOME || '/opt/render', '.cache', 'puppeteer'),
     path.join(process.cwd(), '.cache', 'puppeteer')
   ];
 
-  // 遞迴搜尋檔案名稱為 chrome 的執行檔
   for (const basePath of possiblePaths) {
     if (fs.existsSync(basePath)) {
-      // 若直接是可執行檔
       if (fs.statSync(basePath).isFile()) return basePath;
 
-      // 若是目錄，進行遞迴搜尋
       const stack = [basePath];
       while (stack.length > 0) {
         const current = stack.pop();
@@ -40,7 +34,7 @@ function findInstalledChrome() {
             const stat = fs.statSync(fullPath);
             if (stat.isDirectory()) {
               stack.push(fullPath);
-            } else if (file === 'chrome' && (stat.mode & 0o111)) { // 尋找叫 chrome 且具備執行權限的檔案
+            } else if (file === 'chrome' && (stat.mode & 0o111)) {
               return fullPath;
             }
           }
@@ -75,14 +69,10 @@ module.exports = {
     const fetchRankPage = async (page, serverId) => {
       let browser = null;
       try {
-        
         const chromePath = findInstalledChrome();
-
         if (!chromePath) {
-          throw new Error('無法在系統或 .cache/puppeteer 中找到可用的 Chrome 執行檔！');
+          throw new Error('無法在系統中找到 Chrome 執行檔！');
         }
-
-        console.log(`[Puppeteer] 使用 Chrome 路徑: ${chromePath}`);
 
         browser = await puppeteer.launch({
           headless: 'new',
@@ -100,7 +90,7 @@ module.exports = {
 
         const browserPage = await browser.newPage();
 
-        // 抹除機器人檢測特徵
+        // 反爬蟲偽裝
         await browserPage.evaluateOnNewDocument(() => {
           Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
           Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
@@ -109,13 +99,13 @@ module.exports = {
 
         await browserPage.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
 
-        // 造訪目標頁面
+        // 先造訪主要排行榜頁面以取得對應驗證 Cookie (Turnstile / Antiforgery)
         await browserPage.goto('https://aovweb.azurewebsites.net/Ranking/TOPRankPlayer', {
-          waitUntil: 'domcontentloaded',
-          timeout: 20000
+          waitUntil: 'networkidle2',
+          timeout: 25000
         });
 
-        // 檢查是否遭到反爬蟲擋下
+        // 檢查是否卡在防爬/驗證頁面，若是則重整
         let isErrorPage = await browserPage.evaluate(() => {
           return document.body.innerText.includes('發生了某些錯誤') || document.body.innerText.includes('請重新整理');
         });
@@ -123,38 +113,41 @@ module.exports = {
         let retryCount = 0;
         while (isErrorPage && retryCount < 2) {
           console.log(`[AOV 爬蟲] 觸發防爬頁面，自動嘗試重整 (${retryCount + 1}/2)...`);
-          
-          await Promise.all([
-            browserPage.evaluate(() => {
-              if (typeof location !== 'undefined') location.reload();
-            }),
-            browserPage.waitForNavigation({ waitUntil: 'networkidle2', timeout: 10000 }).catch(() => {})
-          ]);
-
+          await browserPage.reload({ waitUntil: 'networkidle2', timeout: 10000 }).catch(() => {});
           isErrorPage = await browserPage.evaluate(() => {
             return document.body.innerText.includes('發生了某些錯誤');
           });
           retryCount++;
         }
 
-        // 發送 AJAX 請求獲取 API 數據
+       
         const result = await browserPage.evaluate(async (targetPage, targetServer) => {
           try {
-            const formData = new URLSearchParams();
-            formData.append('page', targetPage.toString());
-            formData.append('server', targetServer.toString());
+            // 對齊真實抓包格式：GET /Ranking/TOPRankPlayerList?page=X&server=Y
+            const targetUrl = `/Ranking/TOPRankPlayerList?page=${targetPage}&server=${targetServer}`;
 
-            const res = await fetch('/Ranking/TOPRankPlayerList', {
-              method: 'POST',
+            const res = await fetch(targetUrl, {
+              method: 'GET',
               headers: {
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'Accept': '*/*',
                 'X-Requested-With': 'XMLHttpRequest'
-              },
-              body: formData
+              }
             });
 
             if (!res.ok) return null;
-            return await res.json();
+
+            // 判斷回應是 JSON 還是 HTML 片段
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+              return await res.json();
+            } else {
+              const textData = await res.text();
+              try {
+                return JSON.parse(textData);
+              } catch (e) {
+                return { rawText: textData };
+              }
+            }
           } catch (e) {
             return null;
           }
@@ -188,6 +181,7 @@ module.exports = {
         };
       }
 
+      // 解析相容各式 API 格式
       let rawList = data.data || data.list || data.items || (Array.isArray(data) ? data : []);
 
       let list = [];
@@ -209,7 +203,7 @@ module.exports = {
         .setTimestamp();
 
       if (list.length === 0) {
-        embed.addFields({ name: '無資料', value: '該頁面暫無數據。' });
+        embed.addFields({ name: '無資料', value: '該頁面暫無數據或傳回格式不符。' });
       } else {
         let rankText = '';
         list.forEach((player, index) => {
