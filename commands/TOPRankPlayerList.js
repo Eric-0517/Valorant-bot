@@ -6,7 +6,6 @@ const {
   ButtonStyle, 
   ComponentType 
 } = require('discord.js');
-
 const puppeteer = require('puppeteer-core');
 
 module.exports = {
@@ -33,10 +32,12 @@ module.exports = {
     const fetchRankPage = async (page, serverId) => {
       let browser = null;
       try {
-        
+        // 修正：動態取得由 postinstall 下載的 Chrome 執行檔路徑
+        const chromePath = puppeteer.executablePath();
+
         browser = await puppeteer.launch({
           headless: 'new',
-          channel: 'chrome', // 使用 Render / postinstall 安裝的 Chrome
+          executablePath: chromePath, // 指定精準路徑
           args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -48,7 +49,7 @@ module.exports = {
 
         const browserPage = await browser.newPage();
 
-        // 防無頭瀏覽器偵測偽裝
+        // 抹除機器人檢測特徵
         await browserPage.evaluateOnNewDocument(() => {
           Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
           Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
@@ -63,7 +64,7 @@ module.exports = {
           timeout: 20000
         });
 
-        // 檢查是否遭反爬蟲擋下（若出現錯誤提示則自動重新整理）
+        // 檢查是否遭到反爬蟲擋下
         let isErrorPage = await browserPage.evaluate(() => {
           return document.body.innerText.includes('發生了某些錯誤') || document.body.innerText.includes('請重新整理');
         });
@@ -85,7 +86,7 @@ module.exports = {
           retryCount++;
         }
 
-        // 在瀏覽器 Context 發送 AJAX 請求獲取 API 數據
+        // 發送 AJAX 請求獲取 API 數據
         const result = await browserPage.evaluate(async (targetPage, targetServer) => {
           try {
             const formData = new URLSearchParams();
