@@ -194,4 +194,10 @@
   "keywords": [],
   "author": "",
   "license": "ISC"
+},
+{
+  "scripts": {
+    "start": "node bot.js",
+    "postinstall": "npx puppeteer install"
+  }
 }
