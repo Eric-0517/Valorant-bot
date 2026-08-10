@@ -14,7 +14,7 @@ module.exports = {
       let passwords = await getDeltaPassword();
 
            if (!passwords || passwords.length === 0) {
-        const fallbackText = "零號大壩\n\n8781\n\n長弓溪谷\n\n0025\n\n巴克什\n\n4682\n\n航天基地\n\n8657\n\n潮汐監獄\n\n6817\n\nAZ3\n\n6900";
+        const fallbackText = "零號大壩\n\nN/A\n\n長弓溪谷\n\nN/A\n\n巴克什\n\nN/A\n\n航天基地\n\nN/A\n\n潮汐監獄\n\nN/A\n\nAZ3\n\nN/A";
         passwords = parsePasswordText(fallbackText);
       }
 
