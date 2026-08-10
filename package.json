@@ -3,6 +3,14 @@
   "version": "1.0.0",
   "description": "<h1 align=\"center\">Valorant Stats Discord Bot</h1> <p align=\"center\">Known as ValoStats</p>",
   "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "postinstall": "npx puppeteer browsers install chrome",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "@top-gg/sdk": "^3.1.6",
     "agent-base": "^7.1.0",
@@ -187,17 +195,5 @@
     "ws": "^8.13.0",
     "yallist": "^4.0.0",
     "yamljs": "^0.3.0"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
-},
-{
-  "scripts": {
-    "start": "node index.js",
-    "postinstall": "npx puppeteer browsers install chrome"
   }
 }
