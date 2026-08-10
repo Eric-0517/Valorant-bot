@@ -29,7 +29,7 @@ module.exports = {
     const server = interaction.options.getInteger('server');
     const serverName = server === 1 ? '1服 (聖騎之王)' : '2服 (純潔之翼)';
 
-    // 使用 Puppeteer 繞過 FingerprintJS / Signature 加密
+    // 使用帶有「自動重載 + 抹除機器人特徵」的 Puppeteer 抓取邏輯
     const fetchRankPage = async (page, serverId) => {
       let browser = null;
       try {
@@ -38,22 +38,57 @@ module.exports = {
           args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
-            '--disable-blink-features=AutomationControlled' // 隱藏無頭特徵
+            '--disable-blink-features=AutomationControlled', // 關鍵：停用 Blink 自動化特徵
+            '--disable-infobars',
+            '--window-size=1920,1080'
           ]
         });
 
         const browserPage = await browser.newPage();
 
-        // 設置防爬偽裝 Header
-        await browserPage.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
-
-        // 先載入主頁，讓瀏覽器自動執行 signature.js 與 FingerprintJS
-        await browserPage.goto('https://aovweb.azurewebsites.net/Ranking/TOPRankPlayer', {
-          waitUntil: 'networkidle2',
-          timeout: 15000
+        // 1. 注入 JavaScript 抹除 navigator.webdriver 標記
+        await browserPage.evaluateOnNewDocument(() => {
+          Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+          Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+          Object.defineProperty(navigator, 'languages', { get: () => ['zh-TW', 'zh', 'en-US', 'en'] });
         });
 
-        // 在瀏覽器 context 內執行原生 AJAX 請求（會自動帶上 signature.js 產生的驗證碼）
+        // 2. 設置真實 User-Agent
+        await browserPage.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+
+        // 3. 前往目標頁面
+        await browserPage.goto('https://aovweb.azurewebsites.net/Ranking/TOPRankPlayer', {
+          waitUntil: 'domcontentloaded',
+          timeout: 20000
+        });
+
+        // 4. 檢查是否出現「發生了某些錯誤，請重新整理」畫面，若有則自動點擊刷新
+        let isErrorPage = await browserPage.evaluate(() => {
+          return document.body.innerText.includes('發生了某些錯誤') || document.body.innerText.includes('請重新整理');
+        });
+
+        // 若出現錯誤頁面，自動執行重新整理 (最高重試 2 次)
+        let retryCount = 0;
+        while (isErrorPage && retryCount < 2) {
+          console.log(`[AOV 爬蟲] 觸發錯誤畫面，嘗試點擊重整 (${retryCount + 1}/2)...`);
+          
+          await Promise.all([
+            browserPage.evaluate(() => {
+              if (typeof location !== 'undefined') location.reload();
+            }),
+            browserPage.waitForNavigation({ waitUntil: 'networkidle2', timeout: 10000 }).catch(() => {})
+          ]);
+
+          isErrorPage = await browserPage.evaluate(() => {
+            return document.body.innerText.includes('發生了某些錯誤');
+          });
+          retryCount++;
+        }
+
+        // 5. 等待 JavaScript / FingerprintJS 載入完成
+        await browserPage.waitForTimeout(1500);
+
+        // 6. 在瀏覽器內發送 AJAX 獲取 JSON 資料
         const result = await browserPage.evaluate(async (targetPage, targetServer) => {
           try {
             const formData = new URLSearchParams();
@@ -98,7 +133,7 @@ module.exports = {
             new EmbedBuilder()
               .setColor('#FF4655')
               .setTitle('<a:cross:1535233642312507443> 抓取排位排行榜失敗')
-              .setDescription('目標網站遠端連線逾時或回應異常，請稍後再試。'),
+              .setDescription('目標網站防爬機制阻擋，多次重新整理後仍無法取得數據。'),
           ],
           components: [],
         };
