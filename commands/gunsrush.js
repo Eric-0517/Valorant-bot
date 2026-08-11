@@ -157,7 +157,7 @@ module.exports = {
     }
 
     const embed = new EmbedBuilder()
-      .setTitle('🎯 即刻槍戰｜大廳與伺服器完整狀態報告')
+      .setTitle('即刻槍戰｜伺服器狀態')
       .setColor(online ? 0x00FF00 : 0xFF0000)
       .setDescription(
         online
