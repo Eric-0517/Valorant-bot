@@ -4,7 +4,7 @@ const http = require('http');
 
 const SERVER_IP = '36.50.249.76';
 const SERVER_PORT = 9641; // 大廳 TCP 埠號
-const LOBBY_API_URL = `http://${SERVER_IP}:8080/`; // 取得大廳狀態 JSON 的位址
+const LOBBY_API_URL = `http://${SERVER_IP}/`; // 直連，不加埠號 (預設 Port 80)
 const TIMEOUT = 5000;
 
 /**
@@ -34,7 +34,7 @@ function checkPort() {
 }
 
 /**
- * 抓取大廳伺服器 JSON 狀態資料
+ * 抓取大廳伺服器 JSON 狀態資料 (直連 http://36.50.249.76/)
  */
 function fetchLobbyData() {
   return new Promise((resolve) => {
@@ -157,7 +157,7 @@ module.exports = {
     }
 
     const embed = new EmbedBuilder()
-      .setTitle('即刻槍戰｜大廳與伺服器完整狀態報告')
+      .setTitle('🎯 即刻槍戰｜大廳與伺服器完整狀態報告')
       .setColor(online ? 0x00FF00 : 0xFF0000)
       .setDescription(
         online
@@ -176,7 +176,7 @@ module.exports = {
 
         { name: 'TCP 連線數 (負載)', value: tcpLoadText, inline: true },
         { name: '服務 Ports', value: lobbyData ? `TCP: \`${lobbyData.tcp ?? SERVER_PORT}\` | WS: \`${lobbyData.ws ?? '無'}\`` : '`無數據`', inline: true },
-        { name: '‍', value: '‍', inline: true } // 補位維持排版整齊
+        { name: '‍', value: '‍', inline: true }
       )
       // 2. 資料庫狀態 (SQLite)
       .addFields(
