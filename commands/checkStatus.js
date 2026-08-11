@@ -20,14 +20,13 @@ module.exports = {
     const inputName = rawInputName.toLowerCase();
 
     try {
-      
       const permPath = path.join(__dirname, '../data/perm_bans.json');
       const tempPath = path.join(__dirname, '../data/temp_bans.json');
 
       const permList = fs.existsSync(permPath) ? JSON.parse(fs.readFileSync(permPath, 'utf8')) : [];
       const tempList = fs.existsSync(tempPath) ? JSON.parse(fs.readFileSync(tempPath, 'utf8')) : [];
 
-     
+      // 1. 比對永久停權名單
       const permMatch = permList.find(p => p.playerName && p.playerName.toLowerCase() === inputName);
 
       if (permMatch) {
@@ -37,7 +36,8 @@ module.exports = {
           .addFields(
             { name: '玩家名稱', value: `\`${permMatch.playerName}\``, inline: true },
             { name: '帳號狀態', value: '🔴停權', inline: true },
-            { name: '處罰方式', value: permMatch.reason || '⛔永久停權', inline: false }
+            { name: '處罰方式', value: permMatch.reason || '⛔永久停權', inline: false },
+            { name: '處罰原因', value: '使用不當程式進行遊戲', inline: false }
           )
           .setFooter({ text: '數據來源: 永久停權名單' })
           .setTimestamp();
@@ -55,7 +55,8 @@ module.exports = {
           .addFields(
             { name: '玩家名稱', value: `\`${tempMatch.playerName}\``, inline: true },
             { name: '帳號狀態', value: '🔴停權', inline: true },
-            { name: '處罰方式', value: tempMatch.reason || '短期停權 + 扣除信譽積分', inline: false }
+            { name: '處罰方式', value: tempMatch.reason || '短期停權 + 扣除信譽積分', inline: false },
+            { name: '處罰原因', value: '帳號為不正常狀態、且符合使用不當程式特徵的帳號', inline: false }
           )
           .setFooter({ text: '數據來源: 短期處罰名單' })
           .setTimestamp();
@@ -70,7 +71,8 @@ module.exports = {
         .addFields(
           { name: '玩家名稱', value: `\`${rawInputName}\``, inline: true },
           { name: '帳號狀態', value: '🟢正常', inline: true },
-          { name: '處罰方式', value: '無紀錄', inline: false }
+          { name: '處罰方式', value: '無', inline: false },
+          { name: '處罰原因', value: '無違規紀錄', inline: false }
         )
         .setFooter({ text: '數據來源: 停權懲處名單公告' })
         .setTimestamp();
