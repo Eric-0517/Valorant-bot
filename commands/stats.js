@@ -23,10 +23,17 @@ module.exports = {
     await interaction.deferReply();
 
     try {
-      const playerID = encodeURIComponent(await getArgs(interaction));
-      if (!playerID) {
-        return await interaction.editReply('<a:cross:1535233642312507443>請提供有效的玩家名稱與標籤！');
+      
+      const inputTag = interaction.options.getString('玩家名稱-標籤');
+
+      
+      const rawPlayerID = inputTag || (await getArgs(interaction));
+
+      if (!rawPlayerID) {
+        return await interaction.editReply('<a:cross:1535233642312507443> 請提供有效的玩家名稱與標籤，或先進行帳號綁定！');
       }
+
+      const playerID = encodeURIComponent(rawPlayerID.trim());
 
       const [trackerProfile, trackerOverview, trackerRank] = await Promise.all([
         getData(playerID, DataType.PROFILE),
@@ -167,7 +174,11 @@ module.exports = {
       handlePages(interaction, embeds, author);
     } catch (error) {
       console.error('<a:cross:1535233642312507443> 執行數據查詢指令時出錯:', error);
-      await interaction.editReply({ content: '<a:cross:1535233642312507443> 查詢數據時發生錯誤，請確認玩家名稱標籤是否正確或稍後再試。' }).catch(() => {});
+      await interaction
+        .editReply({
+          content: '<a:cross:1535233642312507443> 查詢數據時發生錯誤，請確認玩家名稱標籤是否正確或稍後再試。',
+        })
+        .catch(() => {});
     }
   },
 };
