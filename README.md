@@ -1,4 +1,4 @@
-<h1 align="center">Valorant Stats Discord Bot</h1>
+<h1 align="center">多功能機器蔥</h1>
 <p align="center">專為 VALORANT 玩家打造的 Discord 即時戰績與數據查詢機器人</p>
 
 <p align="center">
@@ -11,7 +11,7 @@
 
 ## 專案簡介 (Introduction)
 
-本專案是一個基於 **Discord.js v14** 開發的 Valorant 戰績查詢機器人。整合了 **HenrikDev Unofficial Valorant API** 與 **Tracker.gg** 數據，提供玩家查詢即時段位、MMR 變動、總遊玩時長以及伺服器運作狀態等功能。
+本專案提供玩家查詢即時段位、MMR 變動、總遊玩時長以及伺服器運作狀態等功能。
 
 ---
 
