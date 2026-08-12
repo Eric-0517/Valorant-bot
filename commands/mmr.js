@@ -2,7 +2,7 @@ const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const ValorantAPI = require('unofficial-valorant-api');
 require('dotenv').config(); // 載入 .env 環境變數
 
-// 從 .env 讀取 HENRIK_API_KEY 或 VALORANT_API_KEY
+
 const apiKey = process.env.HENRIK_API_KEY || process.env.VALORANT_API_KEY;
 const VAPI = new ValorantAPI(apiKey);
 
