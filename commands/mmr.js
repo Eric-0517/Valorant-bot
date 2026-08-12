@@ -70,7 +70,7 @@ module.exports = {
           { name: ' 上局分數變動', value: `\`${currentData.mmr_change_to_last_game >= 0 ? '+' : ''}${currentData.mmr_change_to_last_game}\``, inline: true },
           { name: ' 歷史最高牌位', value: `\`${highestData.patched_tier || '<:unranked:1535208948880121876>未知'}\` (S${highestData.season})`, inline: false }
         )
-        .setFooter({ text: 'Data provided by Henrik-3 Unofficial Valorant API' })
+        .setFooter({ text: '由 Eric 開發' })
         .setTimestamp();
 
       return await interaction.editReply({ embeds: [embed] });
