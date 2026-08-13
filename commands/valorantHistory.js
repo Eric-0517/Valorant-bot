@@ -211,8 +211,8 @@ module.exports = {
 
         // 上方放我方，下方放敵方
         embed.addFields(
-          { name: `🟦 我方隊伍 (${myScore})`, value: formatPlayerList(myTeamPlayers, myTeamColor), inline: false },
-          { name: `🟥 敵方隊伍 (${enemyScore})`, value: formatPlayerList(enemyTeamPlayers, enemyTeamColor), inline: false }
+          { name: `我方隊伍 (${myScore})`, value: formatPlayerList(myTeamPlayers, myTeamColor), inline: false },
+          { name: `敵方隊伍 (${enemyScore})`, value: formatPlayerList(enemyTeamPlayers, enemyTeamColor), inline: false }
         );
 
         return embed;
