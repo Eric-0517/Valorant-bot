@@ -1,4 +1,9 @@
-const { EmbedBuilder } = require('discord.js');
+const {
+  EmbedBuilder,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+  ComponentType
+} = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { DataType } = require('../constants/types');
 const { getAuthor } = require('../functions/getAuthor');
@@ -12,10 +17,10 @@ const mapNamesZH = {
   'Sunset': '日落之城',
   'Pearl': '深海珍珠',
   'Haven': '劫境之地',
-  'Split': '義境空島',
+  'Split': '雙塔迷城',
   'Lotus': '蓮華古城',
-  'Ascent': '遺落境地',
-  'Bind': '雙塔迷城',
+  'Ascent': '義境空島',
+  'Bind': '綁定點',
   'Breeze': '熱帶樂園',
   'Icebox': '極地寒港',
   'Fracture': '裂破峽谷',
@@ -55,7 +60,7 @@ const agentNamesZH = {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('特戰歷史戰績查詢')
-    .setDescription('取得 VALORANT 玩家最近 5 場的競技對戰紀錄摘要')
+    .setDescription('查詢最近 25 場對戰，並可切換查看詳細玩家數據')
     .addStringOption((option) =>
       option
         .setName('玩家名稱-標籤')
@@ -66,7 +71,7 @@ module.exports = {
     await interaction.deferReply();
 
     try {
-      // 1. 優先獲取輸入的選項，若無則拿綁定帳號
+      // 1. 獲取輸入或綁定帳號
       const inputTag = interaction.options.getString('玩家名稱-標籤');
       const rawPlayerID = inputTag || (await getArgs(interaction));
 
@@ -79,7 +84,7 @@ module.exports = {
 
       const playerID = encodeURIComponent(rawPlayerID.trim());
 
-      // 2. 獲取個人資料與最近對戰紀錄
+      // 2. 獲取個人資料與對戰紀錄
       const [trackerProfile, trackerMatch] = await Promise.all([
         getData(playerID, DataType.PROFILE),
         getData(playerID, DataType.MATCH),
@@ -99,40 +104,26 @@ module.exports = {
       }
 
       const decodedPlayerID = decodeURIComponent(playerID).toLowerCase().replace('#', '');
+      
+      // 最多取 25 場
+      const matches = rawMatches.slice(0, 25);
 
-      // 3. 建立 Embed
-      const historyEmbed = new EmbedBuilder()
-        .setColor('#11806A')
-        .setTitle('近期 5 場競技模式對戰紀錄')
-        .setAuthor(author)
-        .setTimestamp();
-
-      // 最多取最近 5 場對戰
-      const recentMatches = rawMatches.slice(0, 5);
-
-      recentMatches.forEach((match, index) => {
+      // 3. 建立單場戰績 Embed 產生器
+      const createMatchEmbed = (matchIndex) => {
+        const match = matches[matchIndex];
         const metadata = match.metadata || {};
         const players = match.players?.all_players || [];
 
-        // 搜尋當前玩家
+        // 搜尋當前查詢的玩家
         const targetPlayer =
           players.find((p) => {
             const fullTag = `${p.name}${p.tag}`.toLowerCase();
             return fullTag === decodedPlayerID || p.name?.toLowerCase() === decodedPlayerID;
           }) || players[0];
 
-        const targetStats = targetPlayer?.stats || {};
         const rawMapName = metadata.map || 'Unknown';
-        const rawAgentName = targetPlayer?.character || 'Unknown';
-        
-        // 🔹 轉換成中文地圖與特務名稱（若找不到對照則顯示原名）
         const mapNameZH = mapNamesZH[rawMapName] || rawMapName;
-        const agentNameZH = agentNamesZH[rawAgentName] || rawAgentName;
 
-        // Emoji 依然使用英文原名做 lookup
-        const agentEmoji = assets.agentEmojis[rawAgentName]?.emoji || '<:unranked:1535208948880121876>';
-
-        // 隊伍與勝負數據
         const playerTeam = targetPlayer?.team?.toLowerCase() || 'red';
         const redScore = match.teams?.red?.rounds_won || 0;
         const blueScore = match.teams?.blue?.rounds_won || 0;
@@ -140,26 +131,146 @@ module.exports = {
         const roundsLost = playerTeam === 'red' ? blueScore : redScore;
 
         let resultTag = '平手';
-        if (roundsWon > roundsLost) resultTag = '<:greenline:1535208594809557022>勝利';
-        else if (roundsWon < roundsLost) resultTag = '<:redline:1535208157352300544>戰敗';
+        let embedColor = '#808080';
+        if (roundsWon > roundsLost) {
+          resultTag = '<:greenline:1535208594809557022> 勝利';
+          embedColor = '#11806A';
+        } else if (roundsWon < roundsLost) {
+          resultTag = '<:redline:1535208157352300544> 戰敗';
+          embedColor = '#C80000';
+        }
 
-        // 戰績數據
-        const kills = targetStats.kills || 0;
-        const deaths = targetStats.deaths || 0;
-        const assists = targetStats.assists || 0;
-        const score = targetStats.score || 0;
-        const kdRatio = deaths > 0 ? (kills / deaths).toFixed(2) : kills.toFixed(2);
+        const embed = new EmbedBuilder()
+          .setColor(embedColor)
+          .setTitle(`第 ${matchIndex + 1} 場 | ${mapNameZH} (${resultTag}) - ${roundsWon} : ${roundsLost}`)
+          .setAuthor(author)
+          .setDescription(`**模式：** ${metadata.mode || '競技模式'} | **地圖：** ${mapNameZH}`)
+          .setFooter({ text: `第 ${matchIndex + 1} / ${matches.length} 場對戰紀錄` })
+          .setTimestamp();
 
-        historyEmbed.addFields({
-          name: `#${index + 1} | ${mapNameZH} (${resultTag}) - ${roundsWon} : ${roundsLost}`,
-          value:
-            `**使用特務：** ${agentEmoji} ${agentNameZH}\n` +
-            `\`\`\`ansi\n\u001b[2;36mK/D/A: ${kills} / ${deaths} / ${assists} (KD: ${kdRatio}) | 得分: ${score}\n\`\`\``,
-          inline: false,
+        // 區分紅隊與藍隊玩家
+        const redTeamPlayers = players.filter((p) => p.team?.toLowerCase() === 'red');
+        const blueTeamPlayers = players.filter((p) => p.team?.toLowerCase() === 'blue');
+
+        const formatPlayerList = (teamPlayers) => {
+          if (teamPlayers.length === 0) return '無資料';
+          return teamPlayers
+            .map((p) => {
+              const agentName = agentNamesZH[p.character] || p.character || 'Unknown';
+              const emoji = assets.agentEmojis[p.character]?.emoji || '👤';
+              const stats = p.stats || {};
+              const k = stats.kills || 0;
+              const d = stats.deaths || 0;
+              const a = stats.assists || 0;
+              const isCurrent = `${p.name}${p.tag}`.toLowerCase() === decodedPlayerID;
+              
+              // 標示當前查詢的玩家名稱
+              const nameStr = isCurrent ? `**${p.name}#${p.tag}** 👈` : `${p.name}#${p.tag}`;
+              return `${emoji} ${nameStr}\n└ \`${k}/${d}/${a}\` | 得分: \`${stats.score || 0}\``;
+            })
+            .join('\n');
+        };
+
+        embed.addFields(
+          { name: `🔴 紅隊 (${redScore})`, value: formatPlayerList(redTeamPlayers), inline: true },
+          { name: `🔵 藍隊 (${blueScore})`, value: formatPlayerList(blueTeamPlayers), inline: true }
+        );
+
+        return embed;
+      };
+
+      
+      const selectOptions = matches.map((match, index) => {
+        const metadata = match.metadata || {};
+        const players = match.players?.all_players || [];
+        const targetPlayer =
+          players.find((p) => {
+            const fullTag = `${p.name}${p.tag}`.toLowerCase();
+            return fullTag === decodedPlayerID || p.name?.toLowerCase() === decodedPlayerID;
+          }) || players[0];
+
+        const rawMapName = metadata.map || 'Unknown';
+        const mapNameZH = mapNamesZH[rawMapName] || rawMapName;
+
+        const playerTeam = targetPlayer?.team?.toLowerCase() || 'red';
+        const redScore = match.teams?.red?.rounds_won || 0;
+        const blueScore = match.teams?.blue?.rounds_won || 0;
+        const roundsWon = playerTeam === 'red' ? redScore : blueScore;
+        const roundsLost = playerTeam === 'red' ? blueScore : redScore;
+
+        let statusText = '平手';
+        if (roundsWon > roundsLost) statusText = '<:greenline:1535208594809557022>勝利';
+        else if (roundsWon < roundsLost) statusText = '<:redline:1535208157352300544>戰敗';
+
+        const agentNameZH = agentNamesZH[targetPlayer?.character] || targetPlayer?.character || 'Unknown';
+
+        return {
+          label: `#${index + 1} ${statusText} | ${mapNameZH} (${roundsWon}:${roundsLost})`,
+          description: `使用特務: ${agentNameZH} | KDA: ${targetPlayer?.stats?.kills || 0}/${targetPlayer?.stats?.deaths || 0}/${targetPlayer?.stats?.assists || 0}`,
+          value: index.toString(),
+          default: index === 0, // 預設選取最新第 1 場
+        };
+      });
+
+      const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId('select_match_history')
+        .setPlaceholder('選擇要查看的對戰場次...')
+        .addOptions(selectOptions);
+
+      const row = new ActionRowBuilder().addComponents(selectMenu);
+
+      // 預設發送最新 1 場 
+      const initialEmbed = createMatchEmbed(0);
+      const responseMessage = await interaction.editReply({
+        embeds: [initialEmbed],
+        components: [row],
+      });
+
+      // 5. 監聽選單互動 
+      const collector = responseMessage.createMessageComponentCollector({
+        componentType: ComponentType.StringSelect,
+        time: 300000, 
+      });
+
+      collector.on('collect', async (i) => {
+        // 確認是否為點擊者本人
+        if (i.user.id !== interaction.user.id) {
+          return await i.reply({
+            content: '<a:cross:1535233642312507443> 你不能操作其他人的查詢選單！',
+            ephemeral: true,
+          });
+        }
+
+        const selectedIndex = parseInt(i.values[0], 10);
+        const updatedEmbed = createMatchEmbed(selectedIndex);
+
+        // 更新下拉選單的預設選項狀態
+        const updatedOptions = selectOptions.map((opt, idx) => ({
+          ...opt,
+          default: idx === selectedIndex,
+        }));
+
+        const updatedRow = new ActionRowBuilder().addComponents(
+          new StringSelectMenuBuilder()
+            .setCustomId('select_match_history')
+            .setPlaceholder('選擇要查看的對戰場次...')
+            .addOptions(updatedOptions)
+        );
+
+        await i.update({
+          embeds: [updatedEmbed],
+          components: [updatedRow],
         });
       });
 
-      await interaction.editReply({ embeds: [historyEmbed] });
+      // 逾時後停用下拉選單
+      collector.on('end', () => {
+        const disabledRow = new ActionRowBuilder().addComponents(
+          selectMenu.setDisabled(true).setPlaceholder('請重新發送指令')
+        );
+        interaction.editReply({ components: [disabledRow] }).catch(() => {});
+      });
+
     } catch (error) {
       console.error('<a:cross:1535233642312507443> 執行歷史戰績查詢時出錯:', error);
       await interaction
