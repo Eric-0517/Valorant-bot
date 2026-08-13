@@ -59,8 +59,8 @@ const agentNamesZH = {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('特戰歷史戰績查詢')
-    .setDescription('查詢最近 25 場對戰，並可切換查看詳細玩家數據')
+    .setName('特戰查詢歷史戰績')
+    .setDescription('查詢歷史對戰，並查看詳細玩家數據')
     .addStringOption((option) =>
       option
         .setName('玩家名稱-標籤')
@@ -108,7 +108,7 @@ module.exports = {
       // 最多取 25 場
       const matches = rawMatches.slice(0, 25);
 
-      // 3. 建立單場戰績 Embed 產生器
+      
       const createMatchEmbed = (matchIndex) => {
         const match = matches[matchIndex];
         const metadata = match.metadata || {};
@@ -124,62 +124,82 @@ module.exports = {
         const rawMapName = metadata.map || 'Unknown';
         const mapNameZH = mapNamesZH[rawMapName] || rawMapName;
 
-        const playerTeam = targetPlayer?.team?.toLowerCase() || 'red';
+        const myTeamColor = targetPlayer?.team?.toLowerCase() || 'red';
+        const enemyTeamColor = myTeamColor === 'red' ? 'blue' : 'red';
+
         const redScore = match.teams?.red?.rounds_won || 0;
         const blueScore = match.teams?.blue?.rounds_won || 0;
-        const roundsWon = playerTeam === 'red' ? redScore : blueScore;
-        const roundsLost = playerTeam === 'red' ? blueScore : redScore;
+
+        const myScore = myTeamColor === 'red' ? redScore : blueScore;
+        const enemyScore = myTeamColor === 'red' ? blueScore : redScore;
+        const totalRounds = metadata.rounds_played || (redScore + blueScore) || 1;
 
         let resultTag = '平手';
         let embedColor = '#808080';
-        if (roundsWon > roundsLost) {
-          resultTag = '<:greenline:1535208594809557022> 勝利';
+        if (myScore > enemyScore) {
+          resultTag = '勝利';
           embedColor = '#11806A';
-        } else if (roundsWon < roundsLost) {
-          resultTag = '<:redline:1535208157352300544> 戰敗';
+        } else if (myScore < enemyScore) {
+          resultTag = '戰敗';
           embedColor = '#C80000';
         }
 
         const embed = new EmbedBuilder()
           .setColor(embedColor)
-          .setTitle(`第 ${matchIndex + 1} 場 | ${mapNameZH} (${resultTag}) - ${roundsWon} : ${roundsLost}`)
+          .setTitle(`第 ${matchIndex + 1} 場 | ${mapNameZH} (${resultTag}) - ${myScore} : ${enemyScore}`)
           .setAuthor(author)
           .setDescription(`**模式：** ${metadata.mode || '競技模式'} | **地圖：** ${mapNameZH}`)
           .setFooter({ text: `第 ${matchIndex + 1} / ${matches.length} 場對戰紀錄` })
           .setTimestamp();
 
-        // 區分紅隊與藍隊玩家
-        const redTeamPlayers = players.filter((p) => p.team?.toLowerCase() === 'red');
-        const blueTeamPlayers = players.filter((p) => p.team?.toLowerCase() === 'blue');
+        // 區分我方隊伍與敵方隊伍
+        const myTeamPlayers = players.filter((p) => p.team?.toLowerCase() === myTeamColor);
+        const enemyTeamPlayers = players.filter((p) => p.team?.toLowerCase() === enemyTeamColor);
 
         const formatPlayerList = (teamPlayers) => {
           if (teamPlayers.length === 0) return '無資料';
           return teamPlayers
             .map((p) => {
-              const agentName = agentNamesZH[p.character] || p.character || 'Unknown';
-              const emoji = assets.agentEmojis[p.character]?.emoji || '👤';
+              const emoji = assets.agentEmojis[p.character]?.emoji || '⬜';
               const stats = p.stats || {};
               const k = stats.kills || 0;
               const d = stats.deaths || 0;
               const a = stats.assists || 0;
+              const score = stats.score || 0;
+              const acs = Math.round(score / totalRounds);
+
+              // 計算爆頭率
+              const headshots = stats.headshots || 0;
+              const bodyshots = stats.bodyshots || 0;
+              const legshots = stats.legshots || 0;
+              const totalHits = headshots + bodyshots + legshots;
+              const hsRate = totalHits > 0 ? ((headshots / totalHits) * 100).toFixed(1) : '0.0';
+
+              // 牌位名稱
+              const rankStr = p.currenttier_patched || '<:unranked:1535208948880121876>';
+
               const isCurrent = `${p.name}${p.tag}`.toLowerCase() === decodedPlayerID;
-              
-              // 標示當前查詢的玩家名稱
               const nameStr = isCurrent ? `**${p.name}#${p.tag}** 👈` : `${p.name}#${p.tag}`;
-              return `${emoji} ${nameStr}\n└ \`${k}/${d}/${a}\` | 得分: \`${stats.score || 0}\``;
+
+              return (
+                `${emoji} ${nameStr}\n` +
+                `└ 牌位: \`${rankStr}\` | KDA: \`${k}/${d}/${a}\`\n` +
+                `└ 總得分: \`${score}\` | ACS: \`${acs}\` | HS%: \`${hsRate}%\``
+              );
             })
             .join('\n');
         };
 
+        // 上方放我方，下方放敵方 (inline: false 確保上下呈現)
         embed.addFields(
-          { name: `🔴 紅隊 (${redScore})`, value: formatPlayerList(redTeamPlayers), inline: true },
-          { name: `🔵 藍隊 (${blueScore})`, value: formatPlayerList(blueTeamPlayers), inline: true }
+          { name: `🟦我方隊伍 (${myScore})`, value: formatPlayerList(myTeamPlayers), inline: false },
+          { name: `🟥敵方隊伍 (${enemyScore})`, value: formatPlayerList(enemyTeamPlayers), inline: false }
         );
 
         return embed;
       };
 
-      
+      // 4. 建立下拉選單 (Select Menu) 讓使用者選擇場次
       const selectOptions = matches.map((match, index) => {
         const metadata = match.metadata || {};
         const players = match.players?.all_players || [];
@@ -199,8 +219,8 @@ module.exports = {
         const roundsLost = playerTeam === 'red' ? blueScore : redScore;
 
         let statusText = '平手';
-        if (roundsWon > roundsLost) statusText = '<:greenline:1535208594809557022>勝利';
-        else if (roundsWon < roundsLost) statusText = '<:redline:1535208157352300544>戰敗';
+        if (roundsWon > roundsLost) statusText = '勝利';
+        else if (roundsWon < roundsLost) statusText = '戰敗';
 
         const agentNameZH = agentNamesZH[targetPlayer?.character] || targetPlayer?.character || 'Unknown';
 
@@ -208,7 +228,7 @@ module.exports = {
           label: `#${index + 1} ${statusText} | ${mapNameZH} (${roundsWon}:${roundsLost})`,
           description: `使用特務: ${agentNameZH} | KDA: ${targetPlayer?.stats?.kills || 0}/${targetPlayer?.stats?.deaths || 0}/${targetPlayer?.stats?.assists || 0}`,
           value: index.toString(),
-          default: index === 0, // 預設選取最新第 1 場
+          default: index === 0, 
         };
       });
 
