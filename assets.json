@@ -437,7 +437,22 @@
     },
     "Escalation": {
       "emoji": "<:escalation:1535210075289817179>"
-    }
+    },
+    "Swiftplay": {
+  "emoji": "<:swiftplay:1537480763157778532>"
+},
+"Team Deathmatch": {
+  "emoji": "<:teamdeathmatch:1537480765883813918>"
+},
+"Premier": {
+  "emoji": "<:premier:1537480755998105670>"
+},
+"Replication": {
+  "emoji": "<:replication:1537480757839265822>"
+},
+"Snowball Fight": {
+  "emoji": "<:snowballfight:1537480759667986544>"
+}
   },
   "mapEmojis": {
     "Ascent": {
