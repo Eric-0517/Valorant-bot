@@ -251,12 +251,26 @@
       "imgDraw": "https://cdn.discordapp.com/attachments/960747086918344734/1145850002741141574/pearlDraw.jpg",
       "img": "https://cdn.discordapp.com/attachments/960747086918344734/1145850362075545640/pearl.jpg"
     },
+    "Sunset": {
+  "name": "日落之城",
+  "imgWon": "https://cdn.discordapp.com/attachments/1376836565061472368/1537486718134132847/sunsetVictory.png",
+  "imgLost": "https://cdn.discordapp.com/attachments/1376836565061472368/1537486716120866906/sunsetDefeat.png",
+  "imgDraw": "https://cdn.discordapp.com/attachments/1376836565061472368/1537486716573843547/sunsetDraw.png",
+  "img": "https://cdn.discordapp.com/attachments/1376836565061472368/1537486717727019028/sunsetImage.png"
+},
+"Abyss": {
+  "name": "深窟幽境",
+  "imgWon": "https://cdn.discordapp.com/attachments/1376836565061472368/1537486715751632956/abyssVictory.png",
+  "imgLost": "https://cdn.discordapp.com/attachments/1376836565061472368/1537486714568974347/abyssDefeat.png",
+  "imgDraw": "https://cdn.discordapp.com/attachments/1376836565061472368/1537486714904510555/abyssDraw.png",
+  "img": "https://cdn.discordapp.com/attachments/1376836565061472368/1537486715416084560/abyssImage.png"
+},
     "Unknown": {
       "name": "未知",
       "imgWon": "https://cdn.discordapp.com/attachments/834195818080108564/924407916973395968/victory.jpg",
       "imgLost": "https://cdn.discordapp.com/attachments/834195818080108564/924407917233463386/defeat.jpg",
       "imgDraw": "https://cdn.discordapp.com/attachments/834195818080108564/924407916730150932/draw.jpg",
-      "img": "https://cdn.discordapp.com/attachments/834195818080108564/924408585671295016/unknown.jpg"
+      "img": "https://cdn.discordapp.com/attachments/1376836565061472368/1537488915970138192/unknown.png"
     }
   },
   "rankEmojis": {
