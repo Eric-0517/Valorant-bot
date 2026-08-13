@@ -7,6 +7,51 @@ const { getArgs } = require('../functions/getArgs');
 const { handleResponse } = require('../functions/handleResponse');
 const assets = require('../assets.json');
 
+// 地圖英中翻譯對照表
+const mapNamesZH = {
+  'Sunset': '日落之城',
+  'Pearl': '深海珍珠',
+  'Haven': '劫境之地',
+  'Split': '義境空島',
+  'Lotus': '蓮華古城',
+  'Ascent': '遺落境地',
+  'Bind': '雙塔迷城',
+  'Breeze': '熱帶樂園',
+  'Icebox': '極地寒港',
+  'Fracture': '裂破峽谷',
+  'Abyss': '深窟幽境',
+};
+
+// 特務英中翻譯對照表
+const agentNamesZH = {
+  'Jett': '婕提',
+  'Reyna': '蕾娜',
+  'Raze': '芮茲',
+  'Phoenix': '菲尼克斯',
+  'Yoru': '夜戮',
+  'Neon': '妮虹',
+  'Iso': '離索',
+  'Sage': '聖祈',
+  'Chamber': '錢博爾',
+  'Cypher': '瑟符',
+  'Killjoy': '愷宙',
+  'Deadlock': '蒂羅',
+  'Vyse': '薇絲',
+  'Omen': '歐門',
+  'Brimstone': '布史東',
+  'Viper': '薇蝮',
+  'Astra': '亞星卓',
+  'Harbor': '哈泊',
+  'Clove': '珂樂芙',
+  'Sova': '蘇法',
+  'Breach': '鐵臂',
+  'Skye': '斯凱',
+  'KAY/O': 'KAY/O',
+  'Fade': '菲德',
+  'Gekko': '蓋克',
+  'Tejo': '戴侯',
+};
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('特戰歷史戰績查詢')
@@ -77,9 +122,15 @@ module.exports = {
           }) || players[0];
 
         const targetStats = targetPlayer?.stats || {};
-        const mapName = metadata.map || 'Unknown';
-        const agentName = targetPlayer?.character || 'Unknown';
-        const agentEmoji = assets.agentEmojis[agentName]?.emoji || '⚔️';
+        const rawMapName = metadata.map || 'Unknown';
+        const rawAgentName = targetPlayer?.character || 'Unknown';
+        
+        // 🔹 轉換成中文地圖與特務名稱（若找不到對照則顯示原名）
+        const mapNameZH = mapNamesZH[rawMapName] || rawMapName;
+        const agentNameZH = agentNamesZH[rawAgentName] || rawAgentName;
+
+        // Emoji 依然使用英文原名做 lookup
+        const agentEmoji = assets.agentEmojis[rawAgentName]?.emoji || '<:unranked:1535208948880121876>';
 
         // 隊伍與勝負數據
         const playerTeam = targetPlayer?.team?.toLowerCase() || 'red';
@@ -89,8 +140,8 @@ module.exports = {
         const roundsLost = playerTeam === 'red' ? blueScore : redScore;
 
         let resultTag = '平手';
-        if (roundsWon > roundsLost) resultTag = '勝利';
-        else if (roundsWon < roundsLost) resultTag = '敗北(意思就是輸ㄌ)';
+        if (roundsWon > roundsLost) resultTag = '<:greenline:1535208594809557022>勝利';
+        else if (roundsWon < roundsLost) resultTag = '<:redline:1535208157352300544>戰敗';
 
         // 戰績數據
         const kills = targetStats.kills || 0;
@@ -100,9 +151,9 @@ module.exports = {
         const kdRatio = deaths > 0 ? (kills / deaths).toFixed(2) : kills.toFixed(2);
 
         historyEmbed.addFields({
-          name: `#${index + 1} | ${mapName} (${resultTag}) - ${roundsWon} : ${roundsLost}`,
+          name: `#${index + 1} | ${mapNameZH} (${resultTag}) - ${roundsWon} : ${roundsLost}`,
           value:
-            `**使用特務：** ${agentEmoji} ${agentName}\n` +
+            `**使用特務：** ${agentEmoji} ${agentNameZH}\n` +
             `\`\`\`ansi\n\u001b[2;36mK/D/A: ${kills} / ${deaths} / ${assists} (KD: ${kdRatio}) | 得分: ${score}\n\`\`\``,
           inline: false,
         });
