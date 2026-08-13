@@ -1,218 +1,258 @@
 {
   "ranks": {
     "0": {
-      "name": "¥¼°Ñ¥[",
+      "name": "æœªåƒåŠ ",
       "img": "https://bit.ly/3gASVEZ"
     },
     "3": {
-      "name": "ÅKµP 1",
+      "name": "éµç‰Œ 1",
       "img": "https://bit.ly/3vhTurm"
     },
     "4": {
-      "name": "ÅKµP 2",
+      "name": "éµç‰Œ 2",
       "img": "https://bit.ly/2PiWG6L"
     },
     "5": {
-      "name": "ÅKµP 3",
+      "name": "éµç‰Œ 3",
       "img": "https://bit.ly/3gxUgMV"
     },
     "6": {
-      "name": "»ÉµP 1",
+      "name": "éŠ…ç‰Œ 1",
       "img": "https://bit.ly/3eoNKW2"
     },
     "7": {
-      "name": "»ÉµP 2",
+      "name": "éŠ…ç‰Œ 2",
       "img": "https://bit.ly/3xv620L"
     },
     "8": {
-      "name": "»ÉµP 3",
+      "name": "éŠ…ç‰Œ 3",
       "img": "https://static.wikia.nocookie.net/valorant/images/a/a8/TX_CompetitiveTier_Large_8.png/revision/latest/scale-to-width-down/250?cb=20200623203313"
     },
     "9": {
-      "name": "»ÈµP 1",
+      "name": "éŠ€ç‰Œ 1",
       "img": "https://bit.ly/3gzYSlJ"
     },
     "10": {
-      "name": "»ÈµP 2",
+      "name": "éŠ€ç‰Œ 2",
       "img": "https://bit.ly/3xpnpzJ"
     },
     "11": {
-      "name": "»ÈµP 3",
+      "name": "éŠ€ç‰Œ 3",
       "img": "https://bit.ly/3njh7Np"
     },
     "12": {
-      "name": "ª÷µP 1",
+      "name": "é‡‘ç‰Œ 1",
       "img": "https://bit.ly/3sQ4sTg"
     },
     "13": {
-      "name": "ª÷µP 2",
+      "name": "é‡‘ç‰Œ 2",
       "img": "https://bit.ly/3tOjB9f"
     },
     "14": {
-      "name": "ª÷µP 3",
+      "name": "é‡‘ç‰Œ 3",
       "img": "https://bit.ly/3ngODnL"
     },
     "15": {
-      "name": "¥Õª÷ 1",
+      "name": "ç™½é‡‘ 1",
       "img": "https://bit.ly/3aBZVha"
     },
     "16": {
-      "name": "¥Õª÷ 2",
+      "name": "ç™½é‡‘ 2",
       "img": "https://bit.ly/3dNODZ0"
     },
     "17": {
-      "name": "¥Õª÷ 3",
+      "name": "ç™½é‡‘ 3",
       "img": "'https://bit.ly/3gAZGqz"
     },
     "18": {
-      "name": "Æp¥Û 1",
+      "name": "é‘½çŸ³ 1",
       "img": "https://bit.ly/3gBXA9W"
     },
     "19": {
-      "name": "Æp¥Û 2",
+      "name": "é‘½çŸ³ 2",
       "img": "https://bit.ly/3aybLJ6"
     },
     "20": {
-      "name": "Æp¥Û 3",
+      "name": "é‘½çŸ³ 3",
       "img": "'https://bit.ly/3u1Hevb"
     },
     "21": {
-      "name": "¯«¸Ü",
+      "name": "ç¥è©±",
       "img": "https://bit.ly/3tPKpWA"
     },
     "24": {
-      "name": "¿ç¯à¾Ô»î",
+      "name": "è¼»èƒ½æˆ°é­‚",
       "img": "https://bit.ly/3gFlVLQ"
     }
   },
   "agents": {
     "5f8d3a7f-467b-97f3-062c-13acf203c006": {
-      "name": "§P©_",
+      "name": "åˆ¤å¥‡",
       "img": "https://static.wikia.nocookie.net/valorant/images/5/53/Breach_icon.png/revision/latest/scale-to-width-down/99?cb=20201128234328"
     },
     "f94c3b30-42be-e959-889c-5aa313dba261": {
-      "name": "¤º¯÷",
+      "name": "å…§èŒ²",
       "img": "'https://static.wikia.nocookie.net/valorant/images/9/9c/Raze_icon.png/revision/latest/scale-to-width-down/99?cb=20201128234400"
     },
     "add6443a-41bd-e414-f6ad-e58d267f4e95": {
-      "name": "ÔĞ´£",
+      "name": "å©•æ",
       "img": "https://static.wikia.nocookie.net/valorant/images/3/35/Jett_icon.png/revision/latest/scale-to-width-down/185?cb=20201128234156"
     },
     "117ed9e3-49f3-6512-3ccf-0cada7e3823b": {
-      "name": "·æ²Å",
+      "name": "ç‘Ÿç¬¦",
       "img": "'https://static.wikia.nocookie.net/valorant/images/8/88/Cypher_icon.png/revision/latest/scale-to-width-down/99?cb=20201128234211"
     },
     "320b2a48-4d9b-a075-30f1-1f93a9b638fa": {
-      "name": "Ä¬ªk",
+      "name": "è˜‡æ³•",
       "img": "https://titles.trackercdn.com/valorant-api/agents/320b2a48-4d9b-a075-30f1-1f93a9b638fa/displayicon.png"
     },
     "707eab51-4836-f488-046a-cda6bf494859": {
-      "name": "Á¨ç¸",
+      "name": "è–‡è®",
       "img": "'https://static.wikia.nocookie.net/valorant/images/5/5f/Viper_icon.png/revision/latest/scale-to-width-down/99?cb=20201128234408"
     },
     "eb93336a-449b-9c1b-0a54-a891f7921d69": {
-      "name": "µá¥§§J´µ",
+      "name": "è²å°¼å…‹æ–¯",
       "img": "https://titles.trackercdn.com/valorant-api/agents/eb93336a-449b-9c1b-0a54-a891f7921d69/displayicon.png"
     },
     "9f0d8ba9-4140-b941-57d3-a7ad57c6b417": {
-      "name": "¥¬¥vªF",
+      "name": "å¸ƒå²æ±",
       "img": "https://titles.trackercdn.com/valorant-api/agents/9f0d8ba9-4140-b941-57d3-a7ad57c6b417/displayicon.png"
     },
     "569fdd95-4d10-43ab-ca70-79becc718b46": {
-      "name": "¸t¬è",
+      "name": "è–ç¥ˆ",
       "img": "https://static.wikia.nocookie.net/valorant/images/7/74/Sage_icon.png/revision/latest/scale-to-width-down/185?cb=20201128234057"
     },
     "a3bfb853-43b2-7238-a4f1-ad90e9e46bcc": {
-      "name": "¹p®R",
+      "name": "é›·å¨œ",
       "img": "https://static.wikia.nocookie.net/valorant/images/b/b0/Reyna_icon.png/revision/latest/scale-to-width-down/99?cb=20200607180311"
     },
     "8e253930-4c05-31dd-1b6c-968525494517": {
-      "name": "¼Úªù",
+      "name": "æ­é–€",
       "img": "https://static.wikia.nocookie.net/valorant/images/b/b0/Omen_icon.png/revision/latest/scale-to-width-down/99?cb=20201128234318"
     },
     "1e58de9c-4950-5125-93e9-a0aee9f98746": {
-      "name": "³Í©z",
+      "name": "å‡±å®™",
       "img": "https://static.wikia.nocookie.net/valorant/images/1/15/Killjoy_icon.png/revision/latest/scale-to-width-down/99?cb=20200805002141"
     },
     "6f2a04ca-43e0-be17-7f36-b3908627744d": {
-      "name": "µ·³Í",
+      "name": "çµ²å‡±",
       "img": "https://static.wikia.nocookie.net/valorant/images/3/33/Skye_icon.png/revision/latest/scale-to-width-down/99?cb=20201128234628"
     },
     "7f94d92c-4234-0a36-9646-3a87eb8b5c89": {
-      "name": "©]¼®",
+      "name": "å¤œæˆ®",
       "img": "https://static.wikia.nocookie.net/valorant/images/d/d4/Yoru_icon.png/revision/latest/scale-to-width-down/99?cb=20210112211830"
     },
     "41fb69c1-4189-7b37-f117-bcaf1e96f1bf": {
-      "name": "¨È¬P¨ô",
+      "name": "äºæ˜Ÿå“",
       "img": "https://static.wikia.nocookie.net/valorant/images/0/08/Astra_icon.png/revision/latest/scale-to-width-down/99?cb=20210302164234"
-    }
+    },
+    "60152f77-4b7e-4cf7-9ed2-bc2249b182df": {
+  "name": "KAY/O",
+  "img": "https://titles.trackercdn.com/valorant-api/agents/60152f77-4b7e-4cf7-9ed2-bc2249b182df/displayicon.png"
+},
+"22a51f21-4876-269b-da28-a69c6b003502": {
+  "name": "éŒ¢åšçˆ¾",
+  "img": "https://titles.trackercdn.com/valorant-api/agents/22a51f21-4876-269b-da28-a69c6b003502/displayicon.png"
+},
+"bb25429d-479d-0219-b22c-a25e1c07f434": {
+  "name": "å¦®è™¹",
+  "img": "https://titles.trackercdn.com/valorant-api/agents/bb25429d-479d-0219-b22c-a25e1c07f434/displayicon.png"
+},
+"dac83725-429a-4314-01e3-6388d09745d0": {
+  "name": "è²å¾·",
+  "img": "https://titles.trackercdn.com/valorant-api/agents/dac83725-429a-4314-01e3-6388d09745d0/displayicon.png"
+},
+"20a40711-4182-5206-8e3b-4af4f5555509": {
+  "name": "å“ˆæ³Š",
+  "img": "https://titles.trackercdn.com/valorant-api/agents/20a40711-4182-5206-8e3b-4af4f5555509/displayicon.png"
+},
+"e370fa57-4757-3604-3648-499e1f642d3f": {
+  "name": "è“‹å…‹",
+  "img": "https://titles.trackercdn.com/valorant-api/agents/e370fa57-4757-3604-3648-499e1f642d3f/displayicon.png"
+},
+"cc8b02ea-440e-308f-298d-9ab2ac928a5f": {
+  "name": "è’‚ç¾…",
+  "img": "https://titles.trackercdn.com/valorant-api/agents/cc8b02ea-440e-308f-298d-9ab2ac928a5f/displayicon.png"
+},
+"0f657528-43ed-15d4-2f60-a18a70098b00": {
+  "name": "é›¢ç´¢",
+  "img": "https://titles.trackercdn.com/valorant-api/agents/0f657528-43ed-15d4-2f60-a18a70098b00/displayicon.png"
+},
+"1e481f69-4236-7714-369e-30be0d421544": {
+  "name": "ç‚æ¨‚èŠ™",
+  "img": "https://titles.trackercdn.com/valorant-api/agents/1e481f69-4236-7714-369e-30be0d421544/displayicon.png"
+},
+"91038692-4217-2680-e37d-b9a38ef2f928": {
+  "name": "è–‡çµ²",
+  "img": "https://titles.trackercdn.com/valorant-api/agents/91038692-4217-2680-e37d-b9a38ef2f928/displayicon.png"
+}
   },
   "maps": {
     "Bind": {
-      "name": "§T¹Ò¤§¦a",
+      "name": "åŠ«å¢ƒä¹‹åœ°",
       "imgWon": "https://cdn.discordapp.com/attachments/834195818080108564/836293456003072020/bindVictory.jpg",
       "imgLost": "https://cdn.discordapp.com/attachments/834195818080108564/836293453943275540/bindDefeat.jpg",
       "imgDraw": "https://cdn.discordapp.com/attachments/834195818080108564/836293455277195284/bindDraw.jpg",
       "img": "https://cdn.discordapp.com/attachments/834195818080108564/835586366720966797/bindImage.png"
     },
     "Split": {
-      "name": "Âù¶ğ°g«°",
+      "name": "é›™å¡”è¿·åŸ",
       "imgWon": "https://cdn.discordapp.com/attachments/834195818080108564/836293603235594240/splitVictory.jpg",
       "imgLost": "https://cdn.discordapp.com/attachments/834195818080108564/836293604447354930/splitDefeat.jpg",
       "imgDraw": "https://cdn.discordapp.com/attachments/834195818080108564/836293606045777961/splitDraw.jpg",
       "img": "https://cdn.discordapp.com/attachments/834195818080108564/835588130857811998/splitImage.png"
     },
     "Haven": {
-      "name": "¿ò¸¨¹Ò¦a",
+      "name": "éºè½å¢ƒåœ°",
       "imgWon": "https://cdn.discordapp.com/attachments/834195818080108564/836293469050765433/havenVictory.jpg",
       "imgLost": "https://cdn.discordapp.com/attachments/834195818080108564/836293469630627900/havenDefeat.jpg",
       "imgDraw": "https://cdn.discordapp.com/attachments/834195818080108564/836293471915868218/havenDraw.jpg",
       "img": "https://cdn.discordapp.com/attachments/834195818080108564/835588132224106576/havenImage.png"
     },
     "Ascent": {
-      "name": "¸q¹ÒªÅ®q",
+      "name": "ç¾©å¢ƒç©ºå³¶",
       "imgWon": "https://cdn.discordapp.com/attachments/834195818080108564/836293439770984500/ascentVictory.jpg",
       "imgLost": "https://cdn.discordapp.com/attachments/834195818080108564/836293440891256862/ascentDefeat.jpg",
       "imgDraw": "https://cdn.discordapp.com/attachments/834195818080108564/836293442102624308/ascentDraw.jpg",
       "img": "https://cdn.discordapp.com/attachments/834195818080108564/835588133453955082/ascentImage.png"
     },
     "Icebox": {
-      "name": "·¥¦a´H´ä",
+      "name": "æ¥µåœ°å¯’æ¸¯",
       "imgWon": "https://cdn.discordapp.com/attachments/834195818080108564/836293576018886746/iceboxVictory.jpg",
       "imgLost": "https://cdn.discordapp.com/attachments/834195818080108564/836293532364570695/iceboxDefeat.jpg",
       "imgDraw": "https://cdn.discordapp.com/attachments/834195818080108564/836293588001488936/iceboxDraw.jpg",
       "img": "https://cdn.discordapp.com/attachments/834195818080108564/835588129696120863/iceboxImage.png"
     },
     "Breeze": {
-      "name": "¼ö±a¼Ö¶é",
+      "name": "ç†±å¸¶æ¨‚åœ’",
       "imgWon": "https://cdn.discordapp.com/attachments/834195818080108564/836970400088457264/breezeVictory.jpg",
       "imgLost": "https://cdn.discordapp.com/attachments/834195818080108564/836970397344858154/breezeDefeat.jpg",
       "imgDraw": "https://cdn.discordapp.com/attachments/834195818080108564/836970398692016188/breezeDraw.jpg",
       "img": "https://cdn.discordapp.com/attachments/834195818080108564/839591211358748713/breezeImage.png"
     },
     "Fracture": {
-      "name": "¤Ñºz¤§®l",
+      "name": "å¤©æ¼ ä¹‹å³½",
       "imgWon": "https://cdn.discordapp.com/attachments/960747086918344734/1145901663475998730/fractureVictory.jpg",
       "imgLost": "https://cdn.discordapp.com/attachments/960747086918344734/1145901663987703898/fractureDefeat.jpg",
       "imgDraw": "https://cdn.discordapp.com/attachments/960747086918344734/1145901664298086400/fractureDraw.jpg",
       "img": "https://cdn.discordapp.com/attachments/960747086918344734/1145901663731847318/fracture.jpg"
     },
     "Lotus": {
-      "name": "½¬µØ¥j«°",
+      "name": "è“®è¯å¤åŸ",
       "imgWon": "https://cdn.discordapp.com/attachments/960747086918344734/1145850029001687090/lotusVictory.jpg",
       "imgLost": "https://cdn.discordapp.com/attachments/960747086918344734/1145850028204765224/lotusDefeat.jpg",
       "imgDraw": "https://cdn.discordapp.com/attachments/960747086918344734/1145850028460613765/lotusDraw.jpg",
       "img": "https://cdn.discordapp.com/attachments/960747086918344734/1145850362478207007/lotus.jpg"
     },
     "Pearl": {
-      "name": "²`®ü¿ò¯]",
+      "name": "æ·±æµ·éºç ",
       "imgWon": "https://cdn.discordapp.com/attachments/960747086918344734/1145850003252858920/pearlVictory.jpg",
       "imgLost": "https://cdn.discordapp.com/attachments/960747086918344734/1145850002439163935/pearlDefeat.jpg",
       "imgDraw": "https://cdn.discordapp.com/attachments/960747086918344734/1145850002741141574/pearlDraw.jpg",
       "img": "https://cdn.discordapp.com/attachments/960747086918344734/1145850362075545640/pearl.jpg"
     },
     "Unknown": {
-      "name": "¥¼ª¾",
+      "name": "æœªçŸ¥",
       "imgWon": "https://cdn.discordapp.com/attachments/834195818080108564/924407916973395968/victory.jpg",
       "imgLost": "https://cdn.discordapp.com/attachments/834195818080108564/924407917233463386/defeat.jpg",
       "imgDraw": "https://cdn.discordapp.com/attachments/834195818080108564/924407916730150932/draw.jpg",
@@ -371,7 +411,16 @@
     },
     "Deadlock": {
       "emoji": "<:deadlock:1535231802082459769>"
-    }
+},
+"Iso": {
+  "emoji": "<:iso:1537472171243348028>"
+},
+"Clove": {
+  "emoji": "<:clove:1537472160832950282>"
+},
+"Vyse": {
+  "emoji": "<:vyse:1537472178788761620>"
+}
   },
   "modeEmojis": {
     "Competitive": {
