@@ -15,15 +15,15 @@ const assets = require('../assets.json');
 // 地圖英中翻譯對照表
 const mapNamesZH = {
   'Sunset': '日落之城',
-  'Pearl': '深海珍珠',
-  'Haven': '劫境之地',
+  'Pearl': '深海遺珠',
+  'Haven': '遺落境地',
   'Split': '雙塔迷城',
   'Lotus': '蓮華古城',
   'Ascent': '義境空島',
-  'Bind': '綁定點',
+  'Bind': '劫境之地',
   'Breeze': '熱帶樂園',
   'Icebox': '極地寒港',
-  'Fracture': '裂破峽谷',
+  'Fracture': '天漠之峽',
   'Abyss': '深窟幽境',
 };
 
@@ -143,7 +143,11 @@ module.exports = {
         const enemyScore = myTeamColor === 'red' ? blueScore : redScore;
         const totalRounds = metadata.rounds_played || (redScore + blueScore) || 1;
         const gameLengthStr = formatMatchLength(metadata.game_length);
-        const modeNameStr = metadata.mode || '一般模式';
+
+        // 模式 Emoji 與顯示名稱
+        const rawMode = metadata.mode || 'Unrated';
+        const modeEmoji = assets.modeEmojis?.[rawMode] || '';
+        const modeDisplay = `${modeEmoji} ${rawMode}`.trim();
 
         let resultTag = '平手';
         let embedColor = '#808080';
@@ -155,13 +159,17 @@ module.exports = {
           embedColor = '#C80000';
         }
 
-        // 
-        const titleStr = `${resultTag} | ${agentNameZH} | ${myScore}:${enemyScore} | ${modeNameStr} | ${mapNameZH} | ${gameLengthStr}`;
+        // 標題格式：第 1 場 | 戰敗 | 米克什 | 36分 18秒
+        const titleStr = `第 ${matchIndex + 1} 場 | ${resultTag} | ${agentNameZH} | ${gameLengthStr}`;
+        
+        // 內文描述格式：模式： Unrated | 地圖： 日落之城 | 10:13
+        const descriptionStr = `模式： ${modeDisplay} | 地圖： ${mapNameZH} | ${myScore}:${enemyScore}`;
 
         const embed = new EmbedBuilder()
           .setColor(embedColor)
-          .setTitle(titleStr)
           .setAuthor(author)
+          .setTitle(titleStr)
+          .setDescription(descriptionStr)
           .setFooter({ text: `第 ${matchIndex + 1} / ${matches.length} 場對戰紀錄` })
           .setTimestamp();
 
@@ -190,8 +198,10 @@ module.exports = {
               const totalHits = headshots + bodyshots + legshots;
               const hsRate = totalHits > 0 ? ((headshots / totalHits) * 100).toFixed(1) : '0.0';
 
-              // 牌位名稱
-              const rankStr = p.currenttier_patched || '無牌位';
+              // 牌位名稱與 Emoji
+              const rawRank = p.currenttier_patched || '無牌位';
+              const rankEmoji = assets.rankEmojis?.[p.currenttier] || assets.rankEmojis?.[rawRank] || '';
+              const rankDisplay = `${rankEmoji} ${rawRank}`.trim();
 
               const isCurrent = `${p.name}${p.tag}`.toLowerCase() === decodedPlayerID;
               const pointerTag = isCurrent ? '👈' : '';
@@ -199,7 +209,7 @@ module.exports = {
               return (
                 `${teamSquare}${emoji}${pointerTag}\n` +
                 `玩家: **${p.name}#${p.tag}**\n` +
-                `牌位: ${rankStr}\n` +
+                `牌位: ${rankDisplay}\n` +
                 `KDA: ${k}/${d}/${a}\n` +
                 `總得分: ${score}\n` +
                 `ACS: ${acs}\n` +
