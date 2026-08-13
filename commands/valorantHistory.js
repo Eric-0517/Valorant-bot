@@ -57,6 +57,14 @@ const agentNamesZH = {
   'Tejo': '戴侯',
 };
 
+// 格式化對戰時間（秒 -> 分 秒）
+function formatMatchLength(seconds) {
+  if (!seconds || isNaN(seconds)) return '未知';
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}分 ${secs}秒`;
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('特戰查詢歷史戰績')
@@ -108,7 +116,6 @@ module.exports = {
       // 最多取 25 場
       const matches = rawMatches.slice(0, 25);
 
-      
       const createMatchEmbed = (matchIndex) => {
         const match = matches[matchIndex];
         const metadata = match.metadata || {};
@@ -123,6 +130,8 @@ module.exports = {
 
         const rawMapName = metadata.map || 'Unknown';
         const mapNameZH = mapNamesZH[rawMapName] || rawMapName;
+        const rawAgentName = targetPlayer?.character || 'Unknown';
+        const agentNameZH = agentNamesZH[rawAgentName] || rawAgentName;
 
         const myTeamColor = targetPlayer?.team?.toLowerCase() || 'red';
         const enemyTeamColor = myTeamColor === 'red' ? 'blue' : 'red';
@@ -133,6 +142,8 @@ module.exports = {
         const myScore = myTeamColor === 'red' ? redScore : blueScore;
         const enemyScore = myTeamColor === 'red' ? blueScore : redScore;
         const totalRounds = metadata.rounds_played || (redScore + blueScore) || 1;
+        const gameLengthStr = formatMatchLength(metadata.game_length);
+        const modeNameStr = metadata.mode || '一般模式';
 
         let resultTag = '平手';
         let embedColor = '#808080';
@@ -144,11 +155,13 @@ module.exports = {
           embedColor = '#C80000';
         }
 
+        // 
+        const titleStr = `${resultTag} | ${agentNameZH} | ${myScore}:${enemyScore} | ${modeNameStr} | ${mapNameZH} | ${gameLengthStr}`;
+
         const embed = new EmbedBuilder()
           .setColor(embedColor)
-          .setTitle(`第 ${matchIndex + 1} 場 | ${mapNameZH} (${resultTag}) - ${myScore} : ${enemyScore}`)
+          .setTitle(titleStr)
           .setAuthor(author)
-          .setDescription(`**模式：** ${metadata.mode || '競技模式'} | **地圖：** ${mapNameZH}`)
           .setFooter({ text: `第 ${matchIndex + 1} / ${matches.length} 場對戰紀錄` })
           .setTimestamp();
 
@@ -156,8 +169,10 @@ module.exports = {
         const myTeamPlayers = players.filter((p) => p.team?.toLowerCase() === myTeamColor);
         const enemyTeamPlayers = players.filter((p) => p.team?.toLowerCase() === enemyTeamColor);
 
-        const formatPlayerList = (teamPlayers) => {
+        const formatPlayerList = (teamPlayers, teamColorName) => {
           if (teamPlayers.length === 0) return '無資料';
+          const teamSquare = teamColorName === 'blue' ? '🟦' : '🟥';
+
           return teamPlayers
             .map((p) => {
               const emoji = assets.agentEmojis[p.character]?.emoji || '⬜';
@@ -176,24 +191,28 @@ module.exports = {
               const hsRate = totalHits > 0 ? ((headshots / totalHits) * 100).toFixed(1) : '0.0';
 
               // 牌位名稱
-              const rankStr = p.currenttier_patched || '<:unranked:1535208948880121876>';
+              const rankStr = p.currenttier_patched || '無牌位';
 
               const isCurrent = `${p.name}${p.tag}`.toLowerCase() === decodedPlayerID;
-              const nameStr = isCurrent ? `**${p.name}#${p.tag}** 👈` : `${p.name}#${p.tag}`;
+              const pointerTag = isCurrent ? '👈' : '';
 
               return (
-                `${emoji} ${nameStr}\n` +
-                `└ 牌位: \`${rankStr}\` | KDA: \`${k}/${d}/${a}\`\n` +
-                `└ 總得分: \`${score}\` | ACS: \`${acs}\` | HS%: \`${hsRate}%\``
+                `${teamSquare}${emoji}${pointerTag}\n` +
+                `玩家: **${p.name}#${p.tag}**\n` +
+                `牌位: ${rankStr}\n` +
+                `KDA: ${k}/${d}/${a}\n` +
+                `總得分: ${score}\n` +
+                `ACS: ${acs}\n` +
+                `HS%: ${hsRate}%`
               );
             })
-            .join('\n');
+            .join('\n\n');
         };
 
-        // 上方放我方，下方放敵方 (inline: false 確保上下呈現)
+        // 上方放我方，下方放敵方
         embed.addFields(
-          { name: `🟦我方隊伍 (${myScore})`, value: formatPlayerList(myTeamPlayers), inline: false },
-          { name: `🟥敵方隊伍 (${enemyScore})`, value: formatPlayerList(enemyTeamPlayers), inline: false }
+          { name: `🟦 我方隊伍 (${myScore})`, value: formatPlayerList(myTeamPlayers, myTeamColor), inline: false },
+          { name: `🟥 敵方隊伍 (${enemyScore})`, value: formatPlayerList(enemyTeamPlayers, enemyTeamColor), inline: false }
         );
 
         return embed;
