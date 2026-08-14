@@ -11,8 +11,8 @@ const { handleNoVote } = require('../functions/handleNoVote');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('特戰查詢快速對戰模式戰績')
-    .setDescription('取得 VALORANT 玩家快速對戰模式的生涯數據統計')
+    .setName('特戰查詢超速衝點戰績')
+    .setDescription('取得 VALORANT 玩家超速衝點模式的生涯數據統計')
     .addStringOption((option) =>
       option
         .setName('使用者名稱-標籤')
@@ -44,7 +44,7 @@ module.exports = {
 
     const replicationEmbed = new EmbedBuilder()
       .setColor('#11806A')
-      .setTitle(`快速對戰模式 生涯數據統計`)
+      .setTitle(`超速衝點模式 生涯數據統計`)
       .setAuthor(author)
       .setThumbnail(author.iconURL)
       .addFields(
