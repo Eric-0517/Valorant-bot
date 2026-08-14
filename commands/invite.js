@@ -15,7 +15,7 @@ module.exports = {
         name: '邀請連結',
         value:
           '```ansi\n\u001b[2;31m' +
-          '[https://discord.com/oauth2/authorize?client_id=1376593859626143765](https://discord.com/oauth2/authorize?client_id=1376593859626143765)' +
+          'https://discord.com/oauth2/authorize?client_id=1376593859626143765' +
           '\n```',
         inline: true,
       });
