@@ -55,6 +55,18 @@ const agentNamesZH = {
   'Fade': '菲德',
   'Gekko': '蓋克',
   'Tejo': '戴侯',
+  'Miks': '米克什',
+};
+
+// 模式英中翻譯對照表
+const modeNamesZH = {
+  'Competitive': '競技模式',
+  'Unrated': '一般模式',
+  'Spike Rush': '輻能搶攻戰',
+  'Swiftplay': '超速衝點',
+  'Deathmatch': '死鬥模式',
+  'Escalation': '超激進戰',
+  'Team Deathmatch': '團隊死鬥',
 };
 
 // 格式化對戰時間（秒 -> 分 秒）
@@ -144,10 +156,9 @@ module.exports = {
         const totalRounds = metadata.rounds_played || (redScore + blueScore) || 1;
         const gameLengthStr = formatMatchLength(metadata.game_length);
 
-        // 模式 Emoji 與顯示名稱
+        // 模式名稱中文翻譯
         const rawMode = metadata.mode || 'Unrated';
-        const modeEmoji = assets.modeEmojis?.[rawMode] || '';
-        const modeDisplay = `${modeEmoji} ${rawMode}`.trim();
+        const modeNameZH = modeNamesZH[rawMode] || rawMode;
 
         let resultTag = '平手';
         let embedColor = '#808080';
@@ -159,11 +170,10 @@ module.exports = {
           embedColor = '#C80000';
         }
 
-        // 標題格式：第 1 場 | 戰敗 | 米克什 | 36分 18秒
-        const titleStr = `第 ${matchIndex + 1} 場 | ${resultTag} | ${agentNameZH} | ${gameLengthStr}`;
-        
-        // 內文描述格式：模式： Unrated | 地圖： 日落之城 | 10:13
-        const descriptionStr = `模式： ${modeDisplay} | 地圖： ${mapNameZH} | ${myScore}:${enemyScore}`;
+        // 標題格式：戰敗 | 米克什 | 10:13 | 一般模式 | 日落之城
+        const titleStr = `${resultTag} | ${agentNameZH} | ${myScore}:${enemyScore} | ${modeNameZH} | ${mapNameZH}`;
+        // 時間獨立換行
+        const descriptionStr = `${gameLengthStr}`;
 
         const embed = new EmbedBuilder()
           .setColor(embedColor)
@@ -198,9 +208,14 @@ module.exports = {
               const totalHits = headshots + bodyshots + legshots;
               const hsRate = totalHits > 0 ? ((headshots / totalHits) * 100).toFixed(1) : '0.0';
 
-              // 牌位名稱與 Emoji
-              const rawRank = p.currenttier_patched || '無牌位';
-              const rankEmoji = assets.rankEmojis?.[p.currenttier] || assets.rankEmojis?.[rawRank] || '';
+              // 牌位名稱翻譯 (Unrated -> 未定牌階)
+              let rawRank = p.currenttier_patched || '未定牌階';
+              if (rawRank === 'Unrated' || rawRank === '無牌位') {
+                rawRank = '未定牌階';
+              }
+
+              const rankData = assets.rankEmojis?.[p.currenttier] || assets.rankEmojis?.[p.currenttier_patched];
+              const rankEmoji = typeof rankData === 'object' ? (rankData?.emoji || '') : (rankData || '');
               const rankDisplay = `${rankEmoji} ${rawRank}`.trim();
 
               const isCurrent = `${p.name}${p.tag}`.toLowerCase() === decodedPlayerID;
