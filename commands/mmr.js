@@ -1,6 +1,6 @@
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const ValorantAPI = require('unofficial-valorant-api');
-require('dotenv').config(); // 載入 .env 環境變數
+require('dotenv').config(); 
 
 
 const apiKey = process.env.HENRIK_API_KEY || process.env.VALORANT_API_KEY;
@@ -8,7 +8,7 @@ const VAPI = new ValorantAPI(apiKey);
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('特戰玩家mmr查詢')
+    .setName('特戰玩家牌位資料查詢')
     .setDescription('查詢 Valorant 玩家即時牌位與 MMR')
     .addStringOption((option) =>
       option.setName('name').setDescription('玩家名稱 (例如: eric0517)').setRequired(true)
