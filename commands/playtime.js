@@ -6,13 +6,12 @@ const { getAuthor } = require('../functions/getAuthor');
 const { getData } = require('../api');
 const { handleResponse } = require('../functions/handleResponse');
 
-
 function formatPlaytime(value) {
   if (!value || value === 'N/A') return 'N/A';
-  if (typeof value === 'string' && isNaN(Number(value))) return value; // 若已經是文字格式 (如 "120 hrs") 則直接回傳
+  if (typeof value === 'string' && isNaN(Number(value))) return value; 
 
   let seconds = Number(value);
-  if (seconds > 10000000) seconds = Math.floor(seconds / 1000); // 判斷是否為毫秒
+  if (seconds > 10000000) seconds = Math.floor(seconds / 1000); 
 
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
@@ -40,13 +39,18 @@ module.exports = {
     await interaction.deferReply();
 
     try {
-      const rawArgs = await getArgs(interaction);
-      if (!rawArgs) {
-        return await interaction.editReply('請提供有效的玩家名稱與標籤！');
+      // 優先獲取輸入框的內容，若無則讀取綁定帳號
+      const inputTag = interaction.options.getString('玩家名稱-標籤');
+      const rawPlayerID = inputTag ? inputTag.trim() : await getArgs(interaction);
+
+      if (!rawPlayerID) {
+        return await interaction.editReply({
+          content: '<a:cross:1535233642312507443> 請提供有效的玩家名稱與標籤，或先進行帳號綁定！',
+          ephemeral: true,
+        });
       }
 
-      const cleanArgs = decodeURIComponent(rawArgs);
-      const playerID = encodeURIComponent(cleanArgs);
+      const playerID = encodeURIComponent(rawPlayerID);
 
       // 平行發送 API 請求
       const [trackerProfile, trackerReport] = await Promise.all([
@@ -65,7 +69,7 @@ module.exports = {
       let matches = 'N/A';
       let rawHours = 'N/A';
 
-      // --- 情況 A: Tracker.gg API 格式 (從 SEASON_REPORT 讀取) ---
+      
       if (Array.isArray(trackerReport?.data?.data)) {
         const lifetime = trackerReport.data.data.filter(
           (item) => item.type === 'lifetime-matchmaking-time'
@@ -77,7 +81,7 @@ module.exports = {
         }
       }
 
-      // --- 情況 B: HenrikDev API 或基礎 Profile 備援 ---
+      
       if (rawHours === 'N/A' && rawProfile) {
         // 時長解析
         if (rawProfile.stats?.timePlayed?.displayValue || rawProfile.stats?.timePlayed?.value) {
@@ -112,7 +116,7 @@ module.exports = {
             inline: true,
           }
         )
-        .setFooter({ text: '包含所有模式數據' });
+        .setFooter({ text: '由 Eric 開發（包含所有模式數據）' });
 
       if (author?.iconURL) {
         playtimeEmbed.setThumbnail(author.iconURL);
