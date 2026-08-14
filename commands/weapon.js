@@ -19,10 +19,21 @@ module.exports = {
     ),
   async execute(interaction) {
     await interaction.deferReply();
-    const playerID = encodeURIComponent(await getArgs(interaction));
-    if (!playerID) return;
 
-    // 取得基礎個人資料與對戰/概況資料
+    // 優先獲取輸入框的內容，若無則讀取綁定帳號 (getArgs)
+    const inputTag = interaction.options.getString('玩家名稱-標籤');
+    const rawPlayerID = inputTag || (await getArgs(interaction));
+
+    if (!rawPlayerID) {
+      return await interaction.editReply({
+        content: '<a:cross:1535233642312507443> 請提供玩家名稱與標籤，或先進行帳號綁定！',
+        ephemeral: true,
+      });
+    }
+
+    const playerID = encodeURIComponent(rawPlayerID.trim());
+
+    //基礎個人資料與對戰/概況資料
     const [profileData, overviewData] = await Promise.all([
       getData(playerID, DataType.PROFILE),
       getData(playerID, DataType.COMP_OVERVIEW),
@@ -31,13 +42,13 @@ module.exports = {
     const dataSources = [overviewData, profileData];
     if (!(await handleResponse(interaction, dataSources))) return;
 
-    // 取得作者資訊（相容舊版 TRN 與 HenrikDev 格式）
+    
     const rawProfile = profileData?.data?.data || profileData?.data?.data || profileData?.data;
     const author = getAuthor(rawProfile, playerID);
 
     let topWeapons = [];
 
-    // --- 情況 A: Tracker.gg API 格式 ---
+    
     if (overviewData?.data?.data && Array.isArray(overviewData.data.data)) {
       const weaponObjects = overviewData.data.data.filter((item) => item.type === 'weapon');
       weaponObjects.sort((a, b) => (b.stats?.kills?.value || 0) - (a.stats?.kills?.value || 0));
@@ -52,7 +63,7 @@ module.exports = {
         damagePerRound: w.stats?.damagePerRound?.displayValue || '0',
       }));
     } 
-    // --- 情況 B: HenrikDev API 格式 (從近期的對戰歷史計算武器數據) ---
+    
     else if (overviewData?.data?.data && Array.isArray(overviewData.data.data)) {
       // 統計近幾場對戰中該玩家使用的武器數據
       const weaponStatsMap = {};
@@ -86,7 +97,7 @@ module.exports = {
       .setColor('#11806A')
       .setAuthor(author)
       .setThumbnail(author.iconURL)
-      .setDescription(`\`\`\`grey\n          前 ${maxWeaponsToShow} 名 - 武器數據統計\n\`\`\``)
+      .setDescription(`\`\`\`grey\n    前 ${maxWeaponsToShow} 名 - 武器數據統計\n\`\`\``)
       .setFooter({ text: '僅限競技模式武器數據' });
 
     if (maxWeaponsToShow === 0) {
@@ -97,7 +108,7 @@ module.exports = {
     } else {
       topWeapons.forEach((weapon) => {
         weaponEmbed.addFields({
-          name: `${weapon.name}     |     使用回合：${weapon.roundsPlayed}     |     最遠擊殺：${weapon.longestKillMeters} 公尺`,
+          name: `${weapon.name}     | 使用回合：${weapon.roundsPlayed}     | 最遠擊殺：${weapon.longestKillMeters} 公尺`,
           value: `\`\`\`ansi\n\u001b[2;34m擊殺:${weapon.kills}\u001b[0;0m / \u001b[2;35m死亡:${weapon.deaths}\u001b[0;0m | \u001b[2;36m爆頭率:${weapon.headshotPct}\u001b[0;0m | \u001b[2;33m每回合傷害:${weapon.damagePerRound}\n\`\`\``,
           inline: false,
         });
