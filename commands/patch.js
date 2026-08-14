@@ -4,7 +4,7 @@ const axios = require('axios');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('特戰查詢更新日誌')
-    .setDescription('查詢《特戰英豪》最新版本更新日誌'),
+    .setDescription('查詢 VALORANT 最新版本更新日誌'),
 
   async execute(interaction) {
     await interaction.deferReply();
@@ -15,7 +15,7 @@ module.exports = {
       const versionData = versionRes.data.data;
 
       
-      const patchVersion = versionData.manifestId.substring(0, 4); // 例如 "08.11"
+      const patchVersion = versionData.manifestId.substring(0, 4); 
       const cleanVersion = versionData.version.split('-')[0]; // 版本號
 
       const embed = new EmbedBuilder()
