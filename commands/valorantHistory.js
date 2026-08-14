@@ -25,6 +25,7 @@ const mapNamesZH = {
   'Icebox': '極地寒港',
   'Fracture': '天漠之峽',
   'Abyss': '深窟幽境',
+  'Corrode': '晶蝕之地',
 };
 
 // 特務英中翻譯對照表
