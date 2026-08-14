@@ -64,7 +64,7 @@ function formatTaiwanTime(timeStr) {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('特戰查詢伺服器維護狀態') 
-    .setDescription('查詢《特戰英豪》伺服器維護狀態')
+    .setDescription('查詢 VALORANT 伺服器維護狀態')
     .addStringOption((option) =>
       option
         .setName('region')
