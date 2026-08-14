@@ -14,7 +14,7 @@ module.exports = {
     .setDescription('取得 VALORANT 玩家地圖數據統計')
     .addStringOption((option) =>
       option
-        .setName('使用者名稱-標籤')
+        .setName('玩家名稱-標籤')
         .setDescription('您的 VALORANT 玩家名稱與標籤（例如：eric0517#7632）')
         .setRequired(false)
     ),
@@ -22,11 +22,18 @@ module.exports = {
     await interaction.deferReply();
 
     try {
-      const rawArgs = await getArgs(interaction);
-      if (!rawArgs) return;
+      // 1. 優先獲取輸入框的內容，若無則讀取綁定帳號 (getArgs)
+      const inputTag = interaction.options.getString('玩家名稱-標籤');
+      const rawPlayerID = inputTag ? inputTag.trim() : await getArgs(interaction);
 
-      const cleanArgs = decodeURIComponent(rawArgs);
-      const playerID = encodeURIComponent(cleanArgs);
+      if (!rawPlayerID) {
+        return await interaction.editReply({
+          content: '<a:cross:1535233642312507443> 請提供有效的玩家名稱與標籤，或先進行帳號綁定！',
+          ephemeral: true,
+        });
+      }
+
+      const playerID = encodeURIComponent(rawPlayerID);
 
       const [trackerProfile, trackerOverview] = await Promise.all([
         getData(playerID, DataType.PROFILE),
@@ -74,7 +81,7 @@ module.exports = {
           const matchesLost = map.stats?.matchesLost?.displayValue || '0';
           const rawWinPct = map.stats?.matchesWinPct?.value ?? 0;
 
-          // 計算勝率視覺條 (限制範圍 0~16 格，防止 repeat() 傳入負數/NaN 報錯)
+          // 計算勝率視覺條
           const validWinPct = Math.max(0, Math.min(100, Number(rawWinPct) || 0));
           const greenSquare = Math.round((validWinPct / 100) * 16);
           const redSquare = 16 - greenSquare;
@@ -87,7 +94,7 @@ module.exports = {
           const winRatePct = validWinPct.toFixed(0);
 
           mapEmbed.addFields({
-            name: `${name}  ${mapEmoji}    |    ${timePlayed}    |    勝/敗：${matchesWon}/${matchesLost} - ${winRatePct}%`,
+            name: `${name}  ${mapEmoji}    |    ${timePlayed}    |    勝利/戰敗：${matchesWon}/${matchesLost} - ${winRatePct}%`,
             value: winRateVisualized || '▫️',
             inline: false,
           });
