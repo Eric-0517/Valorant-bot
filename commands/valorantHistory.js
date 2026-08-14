@@ -84,7 +84,7 @@ module.exports = {
     .addStringOption((option) =>
       option
         .setName('玩家名稱-標籤')
-        .setDescription('您的 VALORANT 玩家名稱與標籤 (例如: eric0517#7632)')
+        .setDescription('您的玩家名稱與標籤 (例如: eric0517#7632)')
         .setRequired(false)
     ),
   async execute(interaction) {
