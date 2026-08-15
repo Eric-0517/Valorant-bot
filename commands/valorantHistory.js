@@ -12,7 +12,7 @@ const { getArgs } = require('../functions/getArgs');
 const { handleResponse } = require('../functions/handleResponse');
 const assets = require('../assets.json');
 
-// 地圖英中翻譯對照表
+//地圖
 const mapNamesZH = {
   'Sunset': '日落之城',
   'Pearl': '深海遺珠',
@@ -28,7 +28,7 @@ const mapNamesZH = {
   'Corrode': '晶蝕之地',
 };
 
-// 特務英中翻譯對照表
+//特務
 const agentNamesZH = {
   'Jett': '婕提',
   'Reyna': '蕾娜',
@@ -59,7 +59,7 @@ const agentNamesZH = {
   'Miks': '米克什',
 };
 
-// 模式英中翻譯對照表
+//模式
 const modeNamesZH = {
   'Competitive': '競技模式',
   'Unrated': '一般模式',
@@ -70,7 +70,7 @@ const modeNamesZH = {
   'Team Deathmatch': '團隊死鬥',
 };
 
-// 格式化對戰時間（秒 -> 分 秒）
+//格式化對戰時間
 function formatMatchLength(seconds) {
   if (!seconds || isNaN(seconds)) return '未知';
   const mins = Math.floor(seconds / 60);
@@ -126,7 +126,7 @@ module.exports = {
 
       const decodedPlayerID = decodeURIComponent(playerID).toLowerCase().replace('#', '');
       
-      //取25場
+      // 最多取25場
       const matches = rawMatches.slice(0, 25);
 
       const createMatchEmbed = (matchIndex) => {
@@ -134,7 +134,7 @@ module.exports = {
         const metadata = match.metadata || {};
         const players = match.players?.all_players || [];
 
-        //搜尋當前查詢的玩家
+        // 搜尋當前查詢的玩家
         const targetPlayer =
           players.find((p) => {
             const fullTag = `${p.name}${p.tag}`.toLowerCase();
@@ -157,7 +157,7 @@ module.exports = {
         const totalRounds = metadata.rounds_played || (redScore + blueScore) || 1;
         const gameLengthStr = formatMatchLength(metadata.game_length);
 
-        //模式名稱中文翻譯
+        //模式名稱
         const rawMode = metadata.mode || 'Unrated';
         const modeNameZH = modeNamesZH[rawMode] || rawMode;
 
@@ -171,8 +171,10 @@ module.exports = {
           embedColor = '#C80000';
         }
 
+        
         const titleStr = `${resultTag} | ${agentNameZH} | ${myScore}:${enemyScore} | ${modeNameZH} | ${mapNameZH}`;
-        const descriptionStr = `對戰時間：${gameLengthStr}`;
+        //時間
+        const descriptionStr = `${gameLengthStr}`;
 
         const embed = new EmbedBuilder()
           .setColor(embedColor)
@@ -182,7 +184,7 @@ module.exports = {
           .setFooter({ text: `第 ${matchIndex + 1} / ${matches.length} 場對戰紀錄` })
           .setTimestamp();
 
-        //我方與敵方
+        
         const myTeamPlayers = players.filter((p) => p.team?.toLowerCase() === myTeamColor);
         const enemyTeamPlayers = players.filter((p) => p.team?.toLowerCase() === enemyTeamColor);
 
@@ -190,9 +192,9 @@ module.exports = {
           if (teamPlayers.length === 0) return '無資料';
           const teamSquare = teamColorName === 'blue' ? '🟦' : '🟥';
 
-          const formattedText = teamPlayers
+          return teamPlayers
             .map((p) => {
-              const emoji = assets.agentEmojis?.[p.character]?.emoji || '⬜';
+              const emoji = assets.agentEmojis[p.character]?.emoji || '⬜';
               const stats = p.stats || {};
               const k = stats.kills || 0;
               const d = stats.deaths || 0;
@@ -200,35 +202,13 @@ module.exports = {
               const score = stats.score || 0;
               const acs = Math.round(score / totalRounds);
 
-              //爆頭率
+              
               const headshots = stats.headshots || 0;
               const bodyshots = stats.bodyshots || 0;
               const legshots = stats.legshots || 0;
               const totalHits = headshots + bodyshots + legshots;
               const hsRate = totalHits > 0 ? ((headshots / totalHits) * 100).toFixed(1) : '0.0';
 
-              //KAST%
-              const kast = stats.kast ? `${Math.round(stats.kast)}%` : (stats.kast_rate ? `${Math.round(stats.kast_rate * 100)}%` : 'N/A');
-
-              //首殺/首死
-              const firstKills = stats.first_kills || stats.firstkills || 0;
-              const firstDeaths = stats.first_deaths || stats.firstdeaths || 0;
-
-              //下包/拆包
-              const plants = stats.plants || 0;
-              const defuses = stats.defuses || 0;
-
-              //殘局獲勝次數
-              const clutches = stats.clutches ? (typeof stats.clutches === 'object' ? Object.values(stats.clutches).reduce((acc, curr) => acc + curr, 0) : stats.clutches) : 0;
-
-              //多殺回合數
-              const doubleKills = stats.double_kills || 0;
-              const tripleKills = stats.triple_kills || 0;
-              const quadraKills = stats.quadra_kills || 0;
-              const pentaKills = stats.penta_kills || 0;
-              const multiKillsStr = `2K:${doubleKills} | 3K:${tripleKills} | 4K:${quadraKills} | 5K:${pentaKills}`;
-
-              //牌位名稱翻譯
               let rawRank = p.currenttier_patched || '牌階未定';
               if (rawRank === 'Unrated' || rawRank === '無牌位') {
                 rawRank = '牌階未定';
@@ -239,25 +219,19 @@ module.exports = {
               const rankDisplay = `${rankEmoji} ${rawRank}`.trim();
 
               const isCurrent = `${p.name}${p.tag}`.toLowerCase() === decodedPlayerID;
-              const pointerTag = isCurrent ? ' 👈' : '';
+              const pointerTag = isCurrent ? '👈' : '';
 
               return (
-                `${teamSquare}${emoji}\n` +
-                `玩家：**${p.name}#${p.tag}**${pointerTag}\n` +
-                `牌位：${rankDisplay}\n` +
-                `KDA：**${k}/${d}/${a}**\n` +
-                `KAST%：${kast}\n` +
-                `ACS：**${acs}**\n` +
-                `HS%：**${hsRate}%**\n` +
-                `首殺/首死：${firstKills} / ${firstDeaths}\n` +
-                `下包/拆包：${plants} / ${defuses}\n` +
-                `殘局獲勝次數：${clutches}\n` +
-                `多殺回合數：${multiKillsStr}\n` +
-                `總得分：${score}`
+                `${teamSquare}${emoji}${pointerTag}\n` +
+                `玩家: **${p.name}#${p.tag}**\n` +
+                `牌位: ${rankDisplay}\n` +
+                `KDA: ${k}/${d}/${a}\n` +
+                `總得分: ${score}\n` +
+                `ACS: ${acs}\n` +
+                `HS%: ${hsRate}%`
               );
             })
-            .join('\n\n---\n\n');
-          return formattedText.length > 1000 ? formattedText.substring(0, 995) + '...' : formattedText;
+            .join('\n\n');
         };
 
         embed.addFields(
@@ -268,6 +242,7 @@ module.exports = {
         return embed;
       };
 
+      // 4. 建立下拉選單 (Select Menu) 讓使用者選擇場次
       const selectOptions = matches.map((match, index) => {
         const metadata = match.metadata || {};
         const players = match.players?.all_players || [];
@@ -294,7 +269,7 @@ module.exports = {
 
         return {
           label: `#${index + 1} ${statusText} | ${mapNameZH} (${roundsWon}:${roundsLost})`,
-          description: `特務: ${agentNameZH} | KDA: ${targetPlayer?.stats?.kills || 0}/${targetPlayer?.stats?.deaths || 0}/${targetPlayer?.stats?.assists || 0}`,
+          description: `使用特務: ${agentNameZH} | KDA: ${targetPlayer?.stats?.kills || 0}/${targetPlayer?.stats?.deaths || 0}/${targetPlayer?.stats?.assists || 0}`,
           value: index.toString(),
           default: index === 0, 
         };
@@ -312,16 +287,18 @@ module.exports = {
         embeds: [initialEmbed],
         components: [row],
       });
- 
+
+      //監聽選單
       const collector = responseMessage.createMessageComponentCollector({
         componentType: ComponentType.StringSelect,
         time: 300000, 
       });
 
       collector.on('collect', async (i) => {
+        
         if (i.user.id !== interaction.user.id) {
           return await i.reply({
-            content: '<a:cross:1535233642312507443> 錯誤操作！',
+            content: '<a:cross:1535233642312507443> 操作失敗！',
             ephemeral: true,
           });
         }
@@ -329,6 +306,7 @@ module.exports = {
         const selectedIndex = parseInt(i.values[0], 10);
         const updatedEmbed = createMatchEmbed(selectedIndex);
 
+        // 更新下拉選單的預設選項狀態
         const updatedOptions = selectOptions.map((opt, idx) => ({
           ...opt,
           default: idx === selectedIndex,
@@ -347,16 +325,15 @@ module.exports = {
         });
       });
 
-    
       collector.on('end', () => {
         const disabledRow = new ActionRowBuilder().addComponents(
-          selectMenu.setDisabled(true).setPlaceholder('選單已過期，請重新發送指令')
+          selectMenu.setDisabled(true).setPlaceholder('請重新發送指令')
         );
         interaction.editReply({ components: [disabledRow] }).catch(() => {});
       });
 
     } catch (error) {
-      console.error('執行歷史戰績查詢時出錯:', error);
+      console.error('<a:cross:1535233642312507443> 執行歷史戰績查詢時出錯:', error);
       await interaction
         .editReply({
           content: '<a:cross:1535233642312507443> 查詢歷史戰績時發生錯誤，請稍後再試！',
