@@ -7,7 +7,6 @@ const { getAuthor } = require('../functions/getAuthor');
 const { getData } = require('../api');
 const { getArgs } = require('../functions/getArgs');
 const { handleResponse } = require('../functions/handleResponse');
-const { handleNoVote } = require('../functions/handleNoVote');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -20,12 +19,6 @@ module.exports = {
         .setRequired(false)
     ),
   async execute(interaction, client) {
-    const hasVoted = await client.topgg.hasVoted(interaction.user.id);
-    if (!hasVoted) {
-      handleNoVote(interaction);
-      return;
-    }
-
     await interaction.deferReply();
     const playerID = encodeURIComponent(await getArgs(interaction));
     if (!playerID) return;
