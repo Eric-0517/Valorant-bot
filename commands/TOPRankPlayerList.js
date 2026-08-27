@@ -3,8 +3,7 @@ const {
   SlashCommandBuilder
 } = require('discord.js');
 
-const axios = require('axios');
-const cheerio = require('cheerio');
+const { chromium } = require('playwright');
 
 const BASE_URL =
   'https://aovweb.azurewebsites.net/Ranking/TOPRankPlayerList';
@@ -35,217 +34,412 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply();
 
-    const server = interaction.options.getInteger('server');
-    const page = interaction.options.getInteger('page') || 1;
+    const server =
+      interaction.options.getInteger('server');
+
+    const page =
+      interaction.options.getInteger('page') || 1;
 
     const serverName =
       server === 1
         ? '1服・聖騎之王'
         : '2服・純潔之翼';
 
+    let browser = null;
+
     try {
-      // ==============================
-      // 取得排行榜 HTML
-      // ==============================
+      // ==========================================
+      // 啟動 Chromium
+      // ==========================================
 
-      const response = await axios.get(BASE_URL, {
-        params: {
-          page,
-          server
-        },
+      browser = await chromium.launch({
+        headless: true,
 
-        timeout: 15000,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage'
+        ]
+      });
 
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
-            'AppleWebKit/537.36 (KHTML, like Gecko) ' +
-            'Chrome/151.0.0.0 Safari/537.36',
+      const context = await browser.newContext({
+        userAgent:
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
+          'AppleWebKit/537.36 (KHTML, like Gecko) ' +
+          'Chrome/151.0.0.0 Safari/537.36',
 
-          'Accept':
-            'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        locale: 'zh-TW',
 
-          'Accept-Language':
-            'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7'
+        viewport: {
+          width: 1366,
+          height: 900
         }
       });
 
-      // ==============================
-      // 解析 HTML
-      // ==============================
+      const pageObject =
+        await context.newPage();
 
-      const $ = cheerio.load(response.data);
+      // ==========================================
+      // 開啟排行榜
+      // ==========================================
 
-      const players = [];
+      const url =
+        `${BASE_URL}?page=${page}&server=${server}`;
 
-      $('table.table tbody tr').each((index, element) => {
-        const cells = $(element).find('td');
+      console.log(
+        `[AOV 排行榜] 開啟：${url}`
+      );
 
-        // 排行榜應該固定 5 個欄位
-        if (cells.length < 5) {
-          return;
+      await pageObject.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: 30000
+      });
+
+      // ==========================================
+      // 等待排行榜表格
+      // ==========================================
+
+      await pageObject.waitForSelector(
+        'table.table tbody tr',
+        {
+          timeout: 20000
+        }
+      );
+
+      // ==========================================
+      // 找「重新整理頁面」
+      //
+      // 如果網站存在：
+      //
+      // onclick="location.reload(); return false;"
+      //
+      // 就實際點擊一次
+      // ==========================================
+
+      const refreshLink =
+        pageObject.locator(
+          '[onclick*="location.reload"]'
+        ).first();
+
+      const refreshCount =
+        await refreshLink.count();
+
+      if (refreshCount > 0) {
+        console.log(
+          '[AOV 排行榜] 發現「重新整理頁面」，開始點擊'
+        );
+
+        try {
+          await Promise.all([
+            pageObject.waitForLoadState(
+              'domcontentloaded',
+              {
+                timeout: 20000
+              }
+            ).catch(() => {}),
+
+            refreshLink.click({
+              timeout: 10000
+            })
+          ]);
+
+          console.log(
+            '[AOV 排行榜] 重新整理完成'
+          );
+
+        } catch (refreshError) {
+          console.log(
+            '[AOV 排行榜] 重新整理等待結束：',
+            refreshError.message
+          );
         }
 
-        // ==============================
-        // 排名 / 分數
-        // ==============================
+        // ======================================
+        // 重新載入後，再等待排行榜
+        // ======================================
 
-        const rankCell = $(cells[0]);
+        await pageObject.waitForSelector(
+          'table.table tbody tr',
+          {
+            timeout: 20000
+          }
+        );
+      }
 
-        const rankText = rankCell
-          .clone()
-          .children()
-          .remove()
-          .end()
-          .text()
-          .trim();
+      // ==========================================
+      // 稍微等待網站 JS 完成
+      // ==========================================
 
-        const rank =
-          rankText.match(/#(\d+)/)?.[1] || '?';
+      await pageObject.waitForTimeout(500);
 
-        const scoreText =
-          rankCell.find('small').text().trim() || '';
+      // ==========================================
+      // 取得排行榜資料
+      // ==========================================
 
-        // ==============================
-        // 玩家
-        // ==============================
+      const players =
+        await pageObject.locator(
+          'table.table tbody tr'
+        ).evaluateAll(rows => {
 
-        const playerCell = $(cells[1]);
+          return rows
+            .map(row => {
 
-        const avatar =
-          playerCell.find('img').attr('src') || null;
+              const cells =
+                row.querySelectorAll('td');
 
-        const playerName =
-          playerCell
-            .clone()
-            .children('img, br, small')
-            .remove()
-            .end()
-            .text()
-            .trim();
+              if (cells.length < 5) {
+                return null;
+              }
 
-        const uidText =
-          playerCell.find('small').text().trim();
+              // ================================
+              // 排名
+              // ================================
 
-        const uid =
-          uidText.replace(/^\\(UID:\\s*/, '').replace(/\\)$/, '');
+              const rankCell =
+                cells[0];
 
-        // ==============================
-        // 排位
-        // ==============================
+              const rankText =
+                rankCell.innerText.trim();
 
-        const rankName =
-          $(cells[2]).text().trim();
+              const rankMatch =
+                rankText.match(/#(\d+)/);
 
-        // ==============================
-        // 星數
-        // ==============================
+              const rank =
+                rankMatch
+                  ? rankMatch[1]
+                  : '?';
 
-        const starText =
-          $(cells[3]).text().trim();
+              // ================================
+              // 分數
+              // ================================
 
-        const stars =
-          starText.match(/x\\s*(\\d+)/i)?.[1] || '0';
+              const scoreElement =
+                rankCell.querySelector('small');
 
-        // ==============================
-        // 最後遊玩時間
-        // ==============================
+              const score =
+                scoreElement
+                  ? scoreElement.innerText.trim()
+                  : '';
 
-        const lastPlay =
-          $(cells[4]).text().trim();
+              // ================================
+              // 玩家
+              // ================================
 
-        players.push({
-          rank,
-          score: scoreText,
-          name: playerName || '未知玩家',
-          uid,
-          avatar,
-          rankName,
-          stars,
-          lastPlay
+              const playerCell =
+                cells[1];
+
+              const avatarElement =
+                playerCell.querySelector('img');
+
+              const avatar =
+                avatarElement
+                  ? avatarElement.src
+                  : null;
+
+              // 複製玩家欄位
+              // 避免把 UID 算進玩家名稱
+              const clone =
+                playerCell.cloneNode(true);
+
+              const cloneSmall =
+                clone.querySelector('small');
+
+              if (cloneSmall) {
+                cloneSmall.remove();
+              }
+
+              const cloneImg =
+                clone.querySelector('img');
+
+              if (cloneImg) {
+                cloneImg.remove();
+              }
+
+              const cloneBr =
+                clone.querySelector('br');
+
+              if (cloneBr) {
+                cloneBr.remove();
+              }
+
+              const playerName =
+                clone.textContent
+                  .replace(/\s+/g, ' ')
+                  .trim();
+
+              // ================================
+              // UID
+              // ================================
+
+              const uidElement =
+                playerCell.querySelector('small');
+
+              const uidText =
+                uidElement
+                  ? uidElement.innerText.trim()
+                  : '';
+
+              const uidMatch =
+                uidText.match(/UID:\s*(\d+)/i);
+
+              const uid =
+                uidMatch
+                  ? uidMatch[1]
+                  : '';
+
+              // ================================
+              // 排位
+              // ================================
+
+              const rankName =
+                cells[2]
+                  .innerText
+                  .trim();
+
+              // ================================
+              // 星數
+              // ================================
+
+              const starText =
+                cells[3]
+                  .innerText
+                  .trim();
+
+              const starMatch =
+                starText.match(/x\s*(\d+)/i);
+
+              const stars =
+                starMatch
+                  ? starMatch[1]
+                  : '0';
+
+              // ================================
+              // 最後遊玩
+              // ================================
+
+              const lastPlay =
+                cells[4]
+                  .innerText
+                  .trim();
+
+              return {
+                rank,
+                score,
+                name:
+                  playerName || '未知玩家',
+                uid,
+                avatar,
+                rankName,
+                stars,
+                lastPlay
+              };
+            })
+            .filter(Boolean);
         });
-      });
 
-      // ==============================
+      console.log(
+        `[AOV 排行榜] 成功取得 ${players.length} 名玩家`
+      );
+
+      // ==========================================
+      // 關閉瀏覽器
+      // ==========================================
+
+      await browser.close();
+      browser = null;
+
+      // ==========================================
       // 沒有資料
-      // ==============================
+      // ==========================================
 
       if (players.length === 0) {
-        const embed = new EmbedBuilder()
-          .setColor('#FF0000')
-          .setTitle('❌ 找不到排行榜資料')
-          .setDescription(
-            [
-              `伺服器：**${serverName}**`,
-              `頁數：**第 ${page} 頁**`,
-              '',
-              '網站有回應，但沒有找到排行榜資料。',
-              '',
-              '可能原因：',
-              '• 網站暫時異常',
-              '• 頁數不存在',
-              '• 網站 HTML 結構發生變化'
-            ].join('\\n')
-          )
-          .setFooter({
-            text: '傳說對決排行榜'
-          })
-          .setTimestamp();
+
+        const embed =
+          new EmbedBuilder()
+            .setColor('#FF0000')
+            .setTitle('❌ 找不到排行榜資料')
+            .setDescription(
+              [
+                `🌐 伺服器：**${serverName}**`,
+                `📄 頁數：**第 ${page} 頁**`,
+                '',
+                '網站有回應，但沒有找到排行榜資料。',
+                '',
+                '可能原因：',
+                '• 網站暫時異常',
+                '• 排行榜尚未更新',
+                '• 網站 HTML 結構發生變化'
+              ].join('\n')
+            )
+            .setFooter({
+              text: '傳說對決排行榜'
+            })
+            .setTimestamp();
 
         return await interaction.editReply({
           embeds: [embed]
         });
       }
 
-      // ==============================
-      // 建立排行榜
-      // ==============================
+      // ==========================================
+      // 建立 Embed
+      // ==========================================
 
-      const embed = new EmbedBuilder()
-        .setColor('#37B7FF')
-        .setTitle('🏆 傳說對決・排位排行榜')
-        .setDescription(
-          [
-            `🌐 **${serverName}**`,
-            `📄 第 **${page} / 200** 頁`,
-            `👥 本頁 **${players.length}** 名玩家`
-          ].join('\\n')
-        );
+      const embed =
+        new EmbedBuilder()
+          .setColor('#37B7FF')
+          .setTitle(
+            '🏆 傳說對決・排位排行榜'
+          )
+          .setDescription(
+            [
+              `🌐 **${serverName}**`,
+              `📄 第 **${page} / 200** 頁`,
+              `👥 本頁 **${players.length}** 名玩家`
+            ].join('\n')
+          );
 
-      // ==============================
-      // 每頁網站有 100 名
-      // Discord Embed 最多 25 個 fields
-      //
-      // 因此這裡只顯示前 20 名
-      // ==============================
+      // ==========================================
+      // Discord Embed 最多 25 fields
+      // 顯示前 20 名
+      // ==========================================
 
-      const displayPlayers = players.slice(0, 20);
+      const displayPlayers =
+        players.slice(0, 20);
 
       for (const player of displayPlayers) {
+
+        const value = [
+          `🏅 **${player.rankName}**`,
+          `⭐ ${player.stars} 星`,
+          `📊 ${player.score}`,
+          `🆔 UID: \`${player.uid || '未知'}\``,
+          `🕒 ${player.lastPlay}`
+        ].join('\n');
+
         embed.addFields({
           name:
-            `#${player.rank}  ${player.name}`,
+            `#${player.rank}　${player.name}`,
 
-          value:
-            [
-              `🏅 **${player.rankName}**`,
-              `⭐ ${player.stars} 星`,
-              `📊 ${player.score}`,
-              `🆔 UID: \`${player.uid}\``,
-              `🕒 ${player.lastPlay}`
-            ].join('\\n'),
+          value,
 
           inline: false
         });
       }
 
-      // ==============================
-      // 頭像
-      // ==============================
+      // ==========================================
+      // 第一名玩家頭像
+      // ==========================================
 
       if (players[0]?.avatar) {
-        embed.setThumbnail(players[0].avatar);
+        embed.setThumbnail(
+          players[0].avatar
+        );
       }
+
+      // ==========================================
+      // Footer
+      // ==========================================
 
       embed.setFooter({
         text:
@@ -254,37 +448,58 @@ module.exports = {
 
       embed.setTimestamp();
 
-      // ==============================
-      // 回覆
-      // ==============================
+      // ==========================================
+      // Discord 回覆
+      // ==========================================
 
       return await interaction.editReply({
         embeds: [embed]
       });
 
     } catch (error) {
+
       console.error(
         '[AOV 排行榜] 抓取失敗：',
         error
       );
 
-      const embed = new EmbedBuilder()
-        .setColor('#FF0000')
-        .setTitle('❌ 排行榜查詢失敗')
-        .setDescription(
-          [
-            '無法取得排行榜資料。',
-            '',
-            `🌐 伺服器：${serverName}`,
-            `📄 頁數：${page}`,
-            '',
-            '請稍後再試。'
-          ].join('\\n')
-        )
-        .setFooter({
-          text: 'AOV 排行榜服務'
-        })
-        .setTimestamp();
+      // ==========================================
+      // 確保瀏覽器關閉
+      // ==========================================
+
+      if (browser) {
+        try {
+          await browser.close();
+        } catch {}
+      }
+
+      // ==========================================
+      // 錯誤 Embed
+      // ==========================================
+
+      const embed =
+        new EmbedBuilder()
+          .setColor('#FF0000')
+          .setTitle(
+            '❌ 排行榜查詢失敗'
+          )
+          .setDescription(
+            [
+              '無法取得《傳說對決》排行榜資料。',
+              '',
+              `🌐 伺服器：**${serverName}**`,
+              `📄 頁數：**${page}**`,
+              '',
+              `錯誤：\`${error.message}\``,
+              '',
+              '請稍後再試。'
+            ].join('\n')
+          )
+          .setFooter({
+            text:
+              'AOV 排行榜服務'
+          })
+          .setTimestamp();
 
       return await interaction.editReply({
         embeds: [embed]
