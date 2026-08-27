@@ -198,12 +198,12 @@ function formatLatency(latency) {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('即刻槍戰伺服器狀態查詢')
-    .setDescription('即刻槍戰查詢伺服器狀態')
+    .setName('即刻槍戰')
+    .setDescription('即刻槍戰')
     .addSubcommand((subcommand) =>
       subcommand
-        .setName('即刻槍戰伺服器狀態查詢')
-        .setDescription('即刻槍戰查詢伺服器狀態')
+        .setName('伺服器狀態查詢')
+        .setDescription('查詢伺服器狀態')
     ),
 
   async execute(interaction) {
