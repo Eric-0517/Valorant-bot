@@ -26,6 +26,8 @@ const mapNamesZH = {
   'Fracture': '天漠之峽',
   'Abyss': '深窟幽境',
   'Corrode': '晶蝕之地',
+  'Summit': '頂峰亭閣',
+  'Kasbah': '阿拉伯堡壘',
 };
 
 //特務
