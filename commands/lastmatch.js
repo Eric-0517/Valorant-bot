@@ -58,10 +58,10 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply();
 
-    // 1. 優先獲取使用者在指令輸入框填寫的選項內容
+    //優先獲取使用者在輸入框填寫的內容
     const inputTag = interaction.options.getString('玩家名稱-標籤');
 
-    // 2. 如果使用者有輸入就用輸入的，沒輸入才呼叫 getArgs(interaction) 抓綁定帳號
+    //如果使用者有輸入就用輸入的，沒輸入才呼叫 getArgs(interaction) 抓綁定帳號
     const rawPlayerID = inputTag || (await getArgs(interaction));
 
     if (!rawPlayerID) {
