@@ -1,5 +1,6 @@
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const ValorantAPI = require('unofficial-valorant-api');
+const { getArgs } = require('../functions/getArgs');
 require('dotenv').config();
 
 const apiKey = process.env.HENRIK_API_KEY || process.env.VALORANT_API_KEY;
@@ -38,18 +39,12 @@ const rankNamesZH = {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('特戰玩家牌位資料查詢')
-    .setDescription('查詢 Valorant 玩家即時牌位與 MMR')
+    .setDescription('查詢 Valorant 玩家牌位與RR')
     .addStringOption((option) =>
       option
-        .setName('name')
-        .setDescription('玩家名稱 (例如: eric0517)')
-        .setRequired(true)
-    )
-    .addStringOption((option) =>
-      option
-        .setName('tag')
-        .setDescription('玩家標籤 (例如: 7632)')
-        .setRequired(true)
+        .setName('玩家名稱-標籤')
+        .setDescription('未綁定帳號請輸入 Riot ID，例如：eric0517#7632')
+        .setRequired(false)
     )
     .addStringOption((option) =>
       option
@@ -66,19 +61,48 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply();
 
-    // 檢查 API Key 是否已設定
     if (!apiKey) {
       return await interaction.editReply({
         content: '<a:cross:1535233642312507443> 系統未設定 API Key，請檢查 `.env` 設定檔！',
       });
     }
 
-    const name = interaction.options.getString('name');
-    const tag = interaction.options.getString('tag');
+    const inputTag = interaction.options.getString('玩家名稱-標籤');
+
+    let rawPlayerID = inputTag;
+
+    if (!rawPlayerID) {
+      rawPlayerID = await getArgs(interaction);
+    }
+
+    if (!rawPlayerID) {
+      return await interaction.editReply({
+        content: '<a:cross:1535233642312507443> 尚未綁定 VALORANT 帳號，請輸入玩家名稱與標籤，例如：`eric0517#7632`',
+      });
+    }
+
+    rawPlayerID = rawPlayerID.trim();
+
+    const separatorIndex = rawPlayerID.lastIndexOf('#');
+
+    if (separatorIndex <= 0 || separatorIndex === rawPlayerID.length - 1) {
+      return await interaction.editReply({
+        content: '<a:cross:1535233642312507443> 玩家名稱格式錯誤，請使用 `玩家名稱#標籤`，例如：`eric0517#7632`',
+      });
+    }
+
+    const name = rawPlayerID.substring(0, separatorIndex).trim();
+    const tag = rawPlayerID.substring(separatorIndex + 1).trim();
+
+    if (!name || !tag) {
+      return await interaction.editReply({
+        content: '<a:cross:1535233642312507443> 玩家名稱格式錯誤，請使用 `玩家名稱#標籤`，例如：`eric0517#7632`',
+      });
+    }
+
     const region = interaction.options.getString('region') || 'ap';
 
     try {
-      // 呼叫 VAPI 取得玩家 MMR 資料 (v2)
       const mmrRes = await VAPI.getMMR({
         version: 'v2',
         region: region,
