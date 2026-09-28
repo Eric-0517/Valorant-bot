@@ -57,11 +57,9 @@ async function getFeaturedStore() {
         );
     }
 
-    if (
-        !Array.isArray(data.data)
-    ) {
+    if (!Array.isArray(data.data)) {
         throw new Error(
-            'HenrikDev 沒有回傳組合包陣列'
+            'HenrikDev 沒有回傳組合包資料'
         );
     }
 
@@ -94,6 +92,7 @@ async function getBundleInfo(bundleUUID) {
         const data = await response.json();
 
         return data.data || null;
+
     } catch (error) {
         console.warn(
             '[特戰組合包] Valorant-API.com 查詢失敗:',
@@ -126,10 +125,10 @@ function formatDiscount(discount) {
     return `${Math.round(discount * 100)}%`;
 }
 
-function createEmbed(bundle, bundleInfo) {
+function createEmbed(bundle, bundleInfo, index) {
     const bundleName =
         bundleInfo?.displayName ||
-        'VALORANT 限時組合包';
+        `限時組合包 ${index + 1}`;
 
     const image =
         bundleInfo?.displayIcon ||
@@ -145,7 +144,7 @@ function createEmbed(bundle, bundleInfo) {
             )
             .addFields(
                 {
-                    name: '💰 組合包價格',
+                    name: '<:Valorant_VP:1554024773091332096> 組合包價格',
                     value: formatPrice(
                         bundle.bundle_price
                     ),
@@ -154,7 +153,7 @@ function createEmbed(bundle, bundleInfo) {
                 {
                     name: '📦 內容數量',
                     value:
-                        `${bundle.items.length} 件`,
+                        `${bundle.items?.length || 0} 件`,
                     inline: true
                 }
             )
@@ -164,15 +163,15 @@ function createEmbed(bundle, bundleInfo) {
         embed.setImage(image);
     }
 
-    if (
-        Array.isArray(bundle.items) &&
-        bundle.items.length > 0
-    ) {
-        const items = [];
+    const items =
+        Array.isArray(bundle.items)
+            ? bundle.items
+            : [];
 
-        for (
-            const item of bundle.items
-        ) {
+    if (items.length > 0) {
+        const itemList = [];
+
+        for (const item of items) {
             const name =
                 item.name ||
                 '未知物品';
@@ -191,14 +190,6 @@ function createEmbed(bundle, bundleInfo) {
             let priceText = '';
 
             if (
-                discountedPrice !== undefined &&
-                discountedPrice !== null
-            ) {
-                priceText =
-                    ` **${formatPrice(discountedPrice)}**`;
-            }
-
-            if (
                 basePrice !== undefined &&
                 basePrice !== null &&
                 discountedPrice !== undefined &&
@@ -206,15 +197,26 @@ function createEmbed(bundle, bundleInfo) {
                 basePrice !== discountedPrice
             ) {
                 priceText =
-                    ` ~~${formatPrice(basePrice)}~~ →${priceText}`;
+                    ` ~~${formatPrice(basePrice)}~~ → **${formatPrice(discountedPrice)}**`;
+            } else if (
+                discountedPrice !== undefined &&
+                discountedPrice !== null
+            ) {
+                priceText =
+                    ` **${formatPrice(discountedPrice)}**`;
+            } else if (
+                basePrice !== undefined &&
+                basePrice !== null
+            ) {
+                priceText =
+                    ` **${formatPrice(basePrice)}**`;
             }
 
             if (discount) {
-                priceText +=
-                    ` ・-${discount}`;
+                priceText += ` ・-${discount}`;
             }
 
-            items.push(
+            itemList.push(
                 `• ${name}${priceText}`
             );
         }
@@ -222,21 +224,15 @@ function createEmbed(bundle, bundleInfo) {
         embed.addFields({
             name: '🛒 組合包內容',
             value:
-                items
+                itemList
                     .join('\n')
                     .substring(0, 1024)
         });
     }
 
-    embed.addFields({
-        name: '🆔 Bundle UUID',
-        value:
-            `\`${bundle.bundle_uuid}\``
-    });
-
     embed.setFooter({
         text:
-            '由 Eric 開發'
+            `VALORANT 組合包 ${index + 1}`
     });
 
     return embed;
@@ -273,79 +269,103 @@ module.exports = {
                 });
             }
 
-            /*
-             * HenrikDev v2 目前會回傳 Featured Bundle
-             * 陣列。
-             *
-             * 通常第一筆就是目前的 Featured Bundle。
-             */
-            const bundle =
-                bundles[0];
+            const embeds = [];
+            const buttons = [];
 
-            console.log(
-                '[特戰組合包] Bundle UUID:',
-                bundle.bundle_uuid
-            );
+            for (
+                let i = 0;
+                i < bundles.length;
+                i++
+            ) {
+                const bundle =
+                    bundles[i];
 
-            console.log(
-                '[特戰組合包] Bundle Price:',
-                bundle.bundle_price
-            );
+                console.log(
+                    `[特戰組合包] 第 ${i + 1} 個組合包`
+                );
 
-            console.log(
-                '[特戰組合包] Items:',
-                bundle.items?.length || 0
-            );
-
-            const bundleInfo =
-                await getBundleInfo(
+                console.log(
+                    '[特戰組合包] Bundle UUID:',
                     bundle.bundle_uuid
                 );
 
-            if (bundleInfo) {
                 console.log(
-                    '[特戰組合包] 組合包名稱:',
-                    bundleInfo.displayName
+                    '[特戰組合包] Bundle Price:',
+                    bundle.bundle_price
                 );
-            } else {
-                console.log(
-                    '[特戰組合包] 找不到 Valorant-API.com 組合包詳細資料，使用 HenrikDev 資料'
-                );
-            }
 
-            const embed =
-                createEmbed(
-                    bundle,
-                    bundleInfo
+                console.log(
+                    '[特戰組合包] Items:',
+                    bundle.items?.length || 0
                 );
+
+                const bundleInfo =
+                    await getBundleInfo(
+                        bundle.bundle_uuid
+                    );
+
+                if (bundleInfo) {
+                    console.log(
+                        `[特戰組合包] 第 ${i + 1} 個組合包名稱:`,
+                        bundleInfo.displayName
+                    );
+                }
+
+                const embed =
+                    createEmbed(
+                        bundle,
+                        bundleInfo,
+                        i
+                    );
+
+                embeds.push(embed);
+
+                if (
+                    bundleInfo?.displayIcon
+                ) {
+                    buttons.push(
+                        new ButtonBuilder()
+                            .setLabel(
+                                `查看${i + 1}號組合包圖片`
+                            )
+                            .setStyle(
+                                ButtonStyle.Link
+                            )
+                            .setURL(
+                                bundleInfo.displayIcon
+                            )
+                    );
+                }
+            }
 
             const components = [];
 
-            if (
-                bundleInfo?.displayIcon
-            ) {
-                const button =
-                    new ButtonBuilder()
-                        .setLabel(
-                            '查看組合包圖片'
-                        )
-                        .setStyle(
-                            ButtonStyle.Link
-                        )
-                        .setURL(
-                            bundleInfo.displayIcon
-                        );
+            if (buttons.length > 0) {
+                const buttonRows = [];
+
+                for (
+                    let i = 0;
+                    i < buttons.length;
+                    i += 5
+                ) {
+                    buttonRows.push(
+                        new ActionRowBuilder()
+                            .addComponents(
+                                buttons.slice(
+                                    i,
+                                    i + 5
+                                )
+                            )
+                    );
+                }
 
                 components.push(
-                    new ActionRowBuilder()
-                        .addComponents(
-                            button
-                        )
+                    ...buttonRows
                 );
             }
 
             await interaction.editReply({
-                embeds: [embed],
+                embeds,
                 components
             });
 
