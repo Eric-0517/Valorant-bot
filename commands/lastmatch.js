@@ -9,6 +9,17 @@ const { handlePages } = require('../functions/handlePages');
 const { handleResponse } = require('../functions/handleResponse');
 const assets = require('../assets.json');
 
+//模式翻譯表
+const modeNamesZH = {
+  'Competitive': '競技模式',
+  'Unrated': '一般模式',
+  'Spike Rush': '輻能搶攻戰',
+  'Swiftplay': '超速衝點',
+  'Deathmatch': '死鬥模式',
+  'Escalation': '超激進戰',
+  'Team Deathmatch': '團隊死鬥',
+};
+
 function getPlayerFields(player, team) {
   const playerName = player.name ? `${player.name}#${player.tag}` : 'Unknown Player';
   const agentName = player.character || 'Unknown';
@@ -36,7 +47,7 @@ function getPlayerFields(player, team) {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('特戰查詢上一場戰績')
-    .setDescription('取得 VALORANT 玩家上一場競技模式的對戰數據')
+    .setDescription('取得 VALORANT 玩家上一場的對戰數據')
     .addStringOption((option) =>
       option
         .setName('玩家名稱-標籤')
@@ -94,7 +105,9 @@ module.exports = {
 
     const targetStats = targetPlayer?.stats || {};
     const lastMap = metadata.map || 'Unknown';
-    const modeName = metadata.mode || 'Competitive';
+
+    const rawModeName = metadata.mode || 'Competitive';
+    const modeName = modeNamesZH[rawModeName] || rawModeName;
 
     // 比分與勝負判定
     const playerTeam = targetPlayer?.team?.toLowerCase() || 'red';
@@ -132,7 +145,7 @@ module.exports = {
 
     const lastMatchEmbed1 = new EmbedBuilder()
       .setColor('#11806A')
-      .setTitle('上一場競技對戰 - ' + lastMap)
+      .setTitle('上一場對戰數據 - ' + lastMap)
       .setAuthor(author)
       .setThumbnail(targetPlayer?.assets?.agent?.small || '')
       .setDescription(`\`              ${metadata.game_start_patched || '近期對戰'}              \``)
@@ -197,7 +210,7 @@ module.exports = {
 
     const lastMatchEmbed2 = new EmbedBuilder()
       .setColor('#11806A')
-      .setTitle(`上一場競技對戰 - ${lastMap} | ${roundsWon} - ${roundsLost}`)
+      .setTitle(`上一場對戰數據 - ${lastMap} | ${roundsWon} - ${roundsLost}`)
       .setAuthor(author)
       .setDescription('```\n                本局對戰玩家列表\n```');
 
