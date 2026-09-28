@@ -17,6 +17,7 @@ const modeNamesZH = {
   'Swiftplay': '超速衝點',
   'Deathmatch': '死鬥模式',
   'Escalation': '超激進戰',
+  'Gauntlet: Glitched': '大亂鬥：異常',
   'Team Deathmatch': '團隊死鬥',
 };
 
