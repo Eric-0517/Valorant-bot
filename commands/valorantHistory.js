@@ -27,6 +27,7 @@ const mapNamesZH = {
   'Abyss': '深窟幽境',
   'Corrode': '晶蝕之地',
   'Summit': '頂峰亭閣',
+  'District': '鐵蹄特區',
   'Kasbah': '阿拉伯堡壘',
 };
 
@@ -69,7 +70,38 @@ const modeNamesZH = {
   'Swiftplay': '超速衝點',
   'Deathmatch': '死鬥模式',
   'Escalation': '超激進戰',
+  'Gauntlet: Glitched': '大亂鬥：異常',
   'Team Deathmatch': '團隊死鬥',
+};
+
+//牌位
+const rankNamesZH = {
+  'Unrated': '牌階未定',
+  'Iron 1': '鐵牌 1',
+  'Iron 2': '鐵牌 2',
+  'Iron 3': '鐵牌 3',
+  'Bronze 1': '銅牌 1',
+  'Bronze 2': '銅牌 2',
+  'Bronze 3': '銅牌 3',
+  'Silver 1': '銀牌 1',
+  'Silver 2': '銀牌 2',
+  'Silver 3': '銀牌 3',
+  'Gold 1': '金牌 1',
+  'Gold 2': '金牌 2',
+  'Gold 3': '金牌 3',
+  'Platinum 1': '白金 1',
+  'Platinum 2': '白金 2',
+  'Platinum 3': '白金 3',
+  'Diamond 1': '鑽石 1',
+  'Diamond 2': '鑽石 2',
+  'Diamond 3': '鑽石 3',
+  'Ascendant 1': '超凡入聖 1',
+  'Ascendant 2': '超凡入聖 2',
+  'Ascendant 3': '超凡入聖 3',
+  'Immortal 1': '神話 1',
+  'Immortal 2': '神話 2',
+  'Immortal 3': '神話 3',
+  'Radiant': '輻能戰魂'
 };
 
 //格式化對戰時間
@@ -127,7 +159,7 @@ module.exports = {
       }
 
       const decodedPlayerID = decodeURIComponent(playerID).toLowerCase().replace('#', '');
-      
+
       // 最多取25場
       const matches = rawMatches.slice(0, 25);
 
@@ -173,7 +205,6 @@ module.exports = {
           embedColor = '#C80000';
         }
 
-        
         const titleStr = `${resultTag} | ${agentNameZH} | ${myScore}:${enemyScore} | ${modeNameZH} | ${mapNameZH}`;
         //時間
         const descriptionStr = `${gameLengthStr}`;
@@ -186,7 +217,6 @@ module.exports = {
           .setFooter({ text: `第 ${matchIndex + 1} / ${matches.length} 場對戰紀錄` })
           .setTimestamp();
 
-        
         const myTeamPlayers = players.filter((p) => p.team?.toLowerCase() === myTeamColor);
         const enemyTeamPlayers = players.filter((p) => p.team?.toLowerCase() === enemyTeamColor);
 
@@ -204,21 +234,24 @@ module.exports = {
               const score = stats.score || 0;
               const acs = Math.round(score / totalRounds);
 
-              
               const headshots = stats.headshots || 0;
               const bodyshots = stats.bodyshots || 0;
               const legshots = stats.legshots || 0;
               const totalHits = headshots + bodyshots + legshots;
               const hsRate = totalHits > 0 ? ((headshots / totalHits) * 100).toFixed(1) : '0.0';
 
-              let rawRank = p.currenttier_patched || '牌階未定';
+              let rawRank = p.currenttier_patched || p.currenttier || '牌階未定';
               if (rawRank === 'Unrated' || rawRank === '無牌位') {
                 rawRank = '牌階未定';
               }
 
+              const rankNameZH =
+                rankNamesZH[rawRank] ||
+                rawRank;
+
               const rankData = assets.rankEmojis?.[p.currenttier] || assets.rankEmojis?.[p.currenttier_patched];
               const rankEmoji = typeof rankData === 'object' ? (rankData?.emoji || '') : (rankData || '');
-              const rankDisplay = `${rankEmoji} ${rawRank}`.trim();
+              const rankDisplay = `${rankEmoji} ${rankNameZH}`.trim();
 
               const isCurrent = `${p.name}${p.tag}`.toLowerCase() === decodedPlayerID;
               const pointerTag = isCurrent ? '👈' : '';
@@ -273,7 +306,7 @@ module.exports = {
           label: `#${index + 1} ${statusText} | ${mapNameZH} (${roundsWon}:${roundsLost})`,
           description: `使用特務: ${agentNameZH} | KDA: ${targetPlayer?.stats?.kills || 0}/${targetPlayer?.stats?.deaths || 0}/${targetPlayer?.stats?.assists || 0}`,
           value: index.toString(),
-          default: index === 0, 
+          default: index === 0,
         };
       });
 
@@ -293,11 +326,11 @@ module.exports = {
       //監聽選單
       const collector = responseMessage.createMessageComponentCollector({
         componentType: ComponentType.StringSelect,
-        time: 300000, 
+        time: 300000,
       });
 
       collector.on('collect', async (i) => {
-        
+
         if (i.user.id !== interaction.user.id) {
           return await i.reply({
             content: '<a:cross:1535233642312507443> 操作失敗！',
