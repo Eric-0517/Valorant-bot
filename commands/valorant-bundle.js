@@ -6,26 +6,11 @@ const {
     ButtonStyle
 } = require('discord.js');
 
-const HENRIK_API = 'https://api.henrikdev.xyz/valorant/v2/store-featured';
-const VALORANT_API = 'https://valorant-api.com/v1/bundles';
+const HENRIK_API =
+    'https://api.henrikdev.xyz/valorant/v2/store-featured';
 
-function formatDuration(seconds) {
-    if (!seconds || seconds <= 0) {
-        return '即將結束';
-    }
-
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-
-    const result = [];
-
-    if (days > 0) result.push(`${days} 天`);
-    if (hours > 0) result.push(`${hours} 小時`);
-    if (minutes > 0) result.push(`${minutes} 分鐘`);
-
-    return result.length > 0 ? result.join(' ') : '不到 1 分鐘';
-}
+const VALORANT_API =
+    'https://valorant-api.com/v1/bundles';
 
 async function getFeaturedStore() {
     const headers = {
@@ -41,41 +26,82 @@ async function getFeaturedStore() {
         headers
     });
 
+    const text = await response.text();
+
+    let data;
+
+    try {
+        data = JSON.parse(text);
+    } catch {
+        throw new Error(
+            `HenrikDev 回傳不是 JSON：${text.substring(0, 300)}`
+        );
+    }
+
     if (!response.ok) {
         throw new Error(
-            `HenrikDev API HTTP ${response.status}`
+            `HenrikDev HTTP ${response.status}: ${JSON.stringify(data)}`
         );
     }
 
-    const data = await response.json();
-
-    if (data.status !== 200) {
+    if (data.status && data.status !== 200) {
         throw new Error(
-            `HenrikDev API 回傳狀態 ${data.status}`
+            `HenrikDev API 錯誤：${JSON.stringify(data)}`
         );
     }
 
-    return data.data;
+    return data;
 }
 
 async function getBundleInfo(bundleId) {
-    const response = await fetch(
-        `${VALORANT_API}/${encodeURIComponent(bundleId)}`
-    );
-
-    if (!response.ok) {
-        throw new Error(
-            `Valorant-API.com HTTP ${response.status}`
-        );
-    }
-
-    const data = await response.json();
-
-    if (!data.data) {
+    if (!bundleId) {
         return null;
     }
 
-    return data.data;
+    const url =
+        `${VALORANT_API}/${encodeURIComponent(bundleId)}`;
+
+    const response = await fetch(url, {
+        headers: {
+            Accept: 'application/json'
+        }
+    });
+
+    const text = await response.text();
+
+    let data;
+
+    try {
+        data = JSON.parse(text);
+    } catch {
+        throw new Error(
+            `Valorant-API.com 回傳不是 JSON：${text.substring(0, 300)}`
+        );
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            `Valorant-API.com HTTP ${response.status}: ${JSON.stringify(data)}`
+        );
+    }
+
+    return data.data || null;
+}
+
+function getFeaturedBundle(store) {
+    if (!store) {
+        return null;
+    }
+
+    if (store.FeaturedBundle) {
+        return store.FeaturedBundle;
+    }
+
+    if (store.data?.FeaturedBundle) {
+        return store.data.FeaturedBundle;
+    }
+
+    return null;
 }
 
 function getBundleId(featuredBundle) {
@@ -83,45 +109,76 @@ function getBundleId(featuredBundle) {
         return null;
     }
 
-    if (featuredBundle.Bundle) {
-        return (
-            featuredBundle.Bundle.DataAssetID ||
-            featuredBundle.Bundle.ID ||
-            null
-        );
+    const bundle = featuredBundle.Bundle;
+
+    if (!bundle) {
+        return null;
     }
 
-    if (featuredBundle.DataAssetID) {
-        return featuredBundle.DataAssetID;
-    }
-
-    return null;
-}
-
-function getBundleItems(featuredBundle) {
-    if (!featuredBundle || !featuredBundle.Bundle) {
-        return [];
-    }
-
-    return Array.isArray(featuredBundle.Bundle.Items)
-        ? featuredBundle.Bundle.Items
-        : [];
-}
-
-function createEmbed(store, bundleInfo) {
-    const featuredBundle = store.FeaturedBundle;
-
-    const bundle = featuredBundle?.Bundle || {};
-
-    const bundleId =
-        bundleInfo?.id ||
+    return (
         bundle.DataAssetID ||
         bundle.ID ||
-        '未知';
+        null
+    );
+}
+
+function formatDuration(seconds) {
+    if (!seconds || seconds <= 0) {
+        return '即將結束';
+    }
+
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor(
+        (seconds % 86400) / 3600
+    );
+    const minutes = Math.floor(
+        (seconds % 3600) / 60
+    );
+
+    const result = [];
+
+    if (days > 0) {
+        result.push(`${days} 天`);
+    }
+
+    if (hours > 0) {
+        result.push(`${hours} 小時`);
+    }
+
+    if (minutes > 0) {
+        result.push(`${minutes} 分鐘`);
+    }
+
+    if (result.length === 0) {
+        return '不到 1 分鐘';
+    }
+
+    return result.join(' ');
+}
+
+function getItemName(item) {
+    if (!item) {
+        return '未知物品';
+    }
+
+    if (item.displayName) {
+        return item.displayName;
+    }
+
+    if (item.name) {
+        return item.name;
+    }
+
+    return `物品 \`${item.ItemID || '未知'}\``;
+}
+
+function createEmbed(featuredBundle, bundleInfo) {
+    const bundle =
+        featuredBundle.Bundle || {};
 
     const bundleName =
         bundleInfo?.displayName ||
-        '特戰英豪組合包';
+        'VALORANT 限時組合包';
 
     const image =
         bundleInfo?.displayIcon ||
@@ -130,19 +187,17 @@ function createEmbed(store, bundleInfo) {
         null;
 
     const remaining =
-        featuredBundle?.BundleRemainingDurationInSeconds ||
+        featuredBundle.BundleRemainingDurationInSeconds ||
         bundle.DurationRemainingInSeconds ||
         0;
 
     const discount =
-        bundle.TotalDiscountPercent != null
-            ? bundle.TotalDiscountPercent
-            : null;
+        bundle.TotalDiscountPercent;
 
     const embed = new EmbedBuilder()
         .setTitle(`🎁 ${bundleName}`)
         .setDescription(
-            '目前商城的限時組合包'
+            '目前 VALORANT 商城的限時組合包'
         )
         .setTimestamp();
 
@@ -156,7 +211,10 @@ function createEmbed(store, bundleInfo) {
         inline: true
     });
 
-    if (discount != null) {
+    if (
+        discount !== undefined &&
+        discount !== null
+    ) {
         embed.addFields({
             name: '🏷️ 組合包折扣',
             value: `${discount}%`,
@@ -164,63 +222,80 @@ function createEmbed(store, bundleInfo) {
         });
     }
 
-    embed.addFields({
-        name: '🆔 Bundle ID',
-        value: `\`${bundleId}\``,
-        inline: false
-    });
+    if (bundle.CurrencyID) {
+        embed.addFields({
+            name: '💰 貨幣',
+            value: 'VP',
+            inline: true
+        });
+    }
 
-    const items = getBundleItems(featuredBundle);
+    const items =
+        Array.isArray(bundle.Items)
+            ? bundle.Items
+            : [];
 
     if (items.length > 0) {
         const itemList = [];
 
-        for (const item of items.slice(0, 10)) {
-            const itemData = item.Item || item;
+        for (const bundleItem of items) {
+            const item =
+                bundleItem.Item || {};
 
-            const itemName =
-                itemData.displayName ||
-                itemData.name ||
-                item.BasePrice != null
-                    ? '組合包內容物'
-                    : '未知物品';
+            const itemId =
+                item.ItemID || '未知';
 
             const basePrice =
-                item.BasePrice != null
-                    ? item.BasePrice
-                    : null;
+                bundleItem.BasePrice;
 
             const discountedPrice =
-                item.DiscountedPrice != null
-                    ? item.DiscountedPrice
-                    : null;
+                bundleItem.DiscountedPrice;
+
+            const discountPercent =
+                bundleItem.DiscountPercent;
+
+            let priceText = '';
 
             if (
-                basePrice != null &&
-                discountedPrice != null
+                discountedPrice !== undefined &&
+                discountedPrice !== null
             ) {
-                itemList.push(
-                    `• ${itemName} — ~~${basePrice}~~ **${discountedPrice} VP**`
-                );
-            } else if (discountedPrice != null) {
-                itemList.push(
-                    `• ${itemName} — **${discountedPrice} VP**`
-                );
-            } else {
-                itemList.push(`• ${itemName}`);
+                priceText =
+                    ` — **${discountedPrice} VP**`;
+            } else if (
+                basePrice !== undefined &&
+                basePrice !== null
+            ) {
+                priceText =
+                    ` — **${basePrice} VP**`;
             }
+
+            let discountText = '';
+
+            if (
+                discountPercent !== undefined &&
+                discountPercent > 0
+            ) {
+                discountText =
+                    ` (-${discountPercent}%)`;
+            }
+
+            itemList.push(
+                `• \`${itemId}\`${priceText}${discountText}`
+            );
         }
 
-        if (itemList.length > 0) {
-            embed.addFields({
-                name: '📦 組合包內容',
-                value: itemList.join('\n').slice(0, 1024)
-            });
-        }
+        embed.addFields({
+            name: '📦 組合包內容',
+            value: itemList
+                .join('\n')
+                .substring(0, 1024)
+        });
     }
 
     embed.setFooter({
-        text: '由 Eric 開發'
+        text:
+            '由 Eric 開發'
     });
 
     return embed;
@@ -229,22 +304,47 @@ function createEmbed(store, bundleInfo) {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('特戰組合包')
-        .setDescription('查看目前 VALORANT 限時組合包'),
+        .setDescription(
+            '查看目前 VALORANT 限時組合包'
+        ),
 
     async execute(interaction) {
         await interaction.deferReply();
 
         try {
-            const store = await getFeaturedStore();
+            console.log(
+                '[特戰組合包] 開始取得 Featured Store...'
+            );
 
-            if (!store || !store.FeaturedBundle) {
+            const store =
+                await getFeaturedStore();
+
+            console.log(
+                '[特戰組合包] HenrikDev 回應：',
+                JSON.stringify(store).substring(0, 2000)
+            );
+
+            const featuredBundle =
+                getFeaturedBundle(store);
+
+            if (!featuredBundle) {
+                console.error(
+                    '[特戰組合包] 找不到 FeaturedBundle'
+                );
+
                 return await interaction.editReply({
-                    content: '目前無法取得 VALORANT 組合包資料。'
+                    content:
+                        '❌ 目前無法取得 VALORANT 組合包資料。'
                 });
             }
 
             const bundleId =
-                getBundleId(store.FeaturedBundle);
+                getBundleId(featuredBundle);
+
+            console.log(
+                '[特戰組合包] Bundle ID:',
+                bundleId
+            );
 
             let bundleInfo = null;
 
@@ -252,42 +352,47 @@ module.exports = {
                 try {
                     bundleInfo =
                         await getBundleInfo(bundleId);
+
+                    console.log(
+                        '[特戰組合包] Valorant-API.com：',
+                        bundleInfo?.displayName ||
+                        '找不到組合包資料'
+                    );
                 } catch (error) {
                     console.warn(
-                        '[特戰組合包] 無法取得組合包詳細資料:',
+                        '[特戰組合包] 取得組合包詳細資料失敗:',
                         error.message
                     );
                 }
             }
 
             const embed =
-                createEmbed(store, bundleInfo);
+                createEmbed(
+                    featuredBundle,
+                    bundleInfo
+                );
 
-            const buttons = [];
+            const components = [];
 
             if (bundleInfo?.displayIcon) {
-                buttons.push(
+                const button =
                     new ButtonBuilder()
                         .setLabel('查看組合包圖片')
                         .setStyle(ButtonStyle.Link)
-                        .setURL(bundleInfo.displayIcon)
+                        .setURL(
+                            bundleInfo.displayIcon
+                        );
+
+                components.push(
+                    new ActionRowBuilder()
+                        .addComponents(button)
                 );
             }
 
-            if (buttons.length > 0) {
-                const row =
-                    new ActionRowBuilder()
-                        .addComponents(buttons);
-
-                await interaction.editReply({
-                    embeds: [embed],
-                    components: [row]
-                });
-            } else {
-                await interaction.editReply({
-                    embeds: [embed]
-                });
-            }
+            await interaction.editReply({
+                embeds: [embed],
+                components
+            });
 
         } catch (error) {
             console.error(
@@ -297,7 +402,8 @@ module.exports = {
 
             await interaction.editReply({
                 content:
-                    '<a:cross:1535233642312507443> 目前無法取得 VALORANT 組合包資料，請稍後再試。'
+                    '❌ 取得 VALORANT 組合包資料時發生錯誤。\n' +
+                    `\`${error.message}\``
             });
         }
     }
