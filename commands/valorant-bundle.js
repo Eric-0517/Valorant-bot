@@ -1,9 +1,6 @@
 const {
     SlashCommandBuilder,
-    EmbedBuilder,
-    ActionRowBuilder,
-    ButtonBuilder,
-    ButtonStyle
+    EmbedBuilder
 } = require('discord.js');
 
 const HENRIK_API =
@@ -270,7 +267,6 @@ module.exports = {
             }
 
             const embeds = [];
-            const buttons = [];
 
             for (
                 let i = 0;
@@ -319,54 +315,10 @@ module.exports = {
                     );
 
                 embeds.push(embed);
-
-                if (
-                    bundleInfo?.displayIcon
-                ) {
-                    buttons.push(
-                        new ButtonBuilder()
-                            .setLabel(
-                                `查看${i + 1}號組合包圖片`
-                            )
-                            .setStyle(
-                                ButtonStyle.Link
-                            )
-                            .setURL(
-                                bundleInfo.displayIcon
-                            )
-                    );
-                }
-            }
-
-            const components = [];
-
-            if (buttons.length > 0) {
-                const buttonRows = [];
-
-                for (
-                    let i = 0;
-                    i < buttons.length;
-                    i += 5
-                ) {
-                    buttonRows.push(
-                        new ActionRowBuilder()
-                            .addComponents(
-                                buttons.slice(
-                                    i,
-                                    i + 5
-                                )
-                            )
-                    );
-                }
-
-                components.push(
-                    ...buttonRows
-                );
             }
 
             await interaction.editReply({
-                embeds,
-                components
+                embeds
             });
 
             console.log(
