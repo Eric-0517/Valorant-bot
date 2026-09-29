@@ -1294,16 +1294,16 @@ module.exports = {
           )
       });
 
-      const collector =
-        interaction.channel?.createMessageComponentCollector({
-          time: 15 * 60 * 1000,
-          filter: (buttonInteraction) =>
-            buttonInteraction.user.id ===
-            interaction.user.id &&
-            buttonInteraction.customId.endsWith(
-              `_${interaction.user.id}`
-            )
-        });
+      const message =
+  await interaction.fetchReply();
+
+const collector =
+  message.createMessageComponentCollector({
+    time: 15 * 60 * 1000,
+    filter: (buttonInteraction) =>
+      buttonInteraction.user.id ===
+      interaction.user.id
+  });
 
       if (!collector) {
         return;
