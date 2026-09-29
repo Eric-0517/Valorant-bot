@@ -142,6 +142,11 @@ module.exports = {
             inline: true
           },
           {
+             name: 'ELO',
+             value: `\`${currentData.elo ?? '你猜^_^'}\``,
+             inline: true
+          },
+          {
             name: '競賽分數 (RR)',
             value: `\`${currentData.ranking_in_tier} / 100\``,
             inline: true
