@@ -33,7 +33,7 @@ try {
 }
 
 const rankNamesZH = {
-  'Unrated': '牌階未定',
+  Unrated: '牌階未定',
   'Iron 1': '鐵牌 1',
   'Iron 2': '鐵牌 2',
   'Iron 3': '鐵牌 3',
@@ -58,18 +58,20 @@ const rankNamesZH = {
   'Immortal 1': '神話 1',
   'Immortal 2': '神話 2',
   'Immortal 3': '神話 3',
-  'Radiant': '輻能戰魂'
+  Radiant: '輻能戰魂'
 };
 
 const modeNamesZH = {
-  'Competitive': '競技模式',
-  'Unrated': '一般模式',
+  Competitive: '競技模式',
+  Unrated: '一般模式',
   'Spike Rush': '輻能搶攻戰',
-  'Swiftplay': '超速衝點',
-  'Deathmatch': '死鬥模式',
+  Swiftplay: '超速衝點',
+  Deathmatch: '死鬥模式',
   'Team Deathmatch': '團隊死鬥',
-  'Escalation': '超激進戰',
-  'Premier': 'Premier'
+  Escalation: '超激進戰',
+  Premier: 'Premier',
+  Replication: '複製模式',
+  Snowball: '雪球大戰'
 };
 
 const regionNamesZH = {
@@ -86,7 +88,7 @@ const agentNamesZH = {
   Reyna: '蕾娜',
   Raze: '芮茲',
   Phoenix: '菲尼克斯',
-  Yoru: '夜露',
+  Yoru: '夜戮',
   Neon: '妮虹',
   Iso: '離索',
   Sage: '聖祈',
@@ -100,7 +102,7 @@ const agentNamesZH = {
   Viper: '薇蝮',
   Astra: '亞星卓',
   Harbor: '哈泊',
-  Clove: '芮娜',
+  Clove: '科芙',
   Sova: '蘇法',
   Breach: '叛奇',
   Skye: '斯凱',
@@ -109,7 +111,7 @@ const agentNamesZH = {
   Gekko: '蓋克',
   Tejo: '鐵臂',
   Miks: '米克什',
-  Waylay: '薇拉'
+  Waylay: '維蕾'
 };
 
 function getAssetUrl(type, key) {
@@ -145,6 +147,8 @@ function getAssetUrl(type, key) {
           group[key].image ||
           group[key].imageUrl ||
           group[key].displayIcon ||
+          group[key].small ||
+          group[key].large ||
           null
         );
       }
@@ -163,6 +167,8 @@ function getAssetUrl(type, key) {
         assets[key].image ||
         assets[key].imageUrl ||
         assets[key].displayIcon ||
+        assets[key].small ||
+        assets[key].large ||
         null
       );
     }
@@ -191,22 +197,21 @@ function getRankIcon(mmr) {
   return (
     mmr?.current_data?.images?.small ||
     mmr?.current_data?.images?.large ||
-    mmr?.current_data?.icon ||
+    mmr?.current_data?.images?.icon ||
     getAssetUrl(
       'ranks',
-      mmr?.current_data?.currenttierpatched
+      mmr?.current_data?.currenttierpatched ||
+      mmr?.current_data?.currenttier_patched
     )
   );
 }
 
 function getPlayerAvatar(account) {
   return (
-    account?.data?.card?.small ||
     account?.card?.small ||
-    account?.data?.card?.large ||
+    account?.data?.card?.small ||
     account?.card?.large ||
-    account?.data?.card?.wide ||
-    account?.card?.wide ||
+    account?.data?.card?.large ||
     null
   );
 }
@@ -347,11 +352,17 @@ function getBasicEmbed(data) {
     account?.data?.account_level ??
     '未知';
 
+  const puuid =
+    data.puuid ||
+    account?.puuid ||
+    account?.data?.puuid ||
+    '未知';
+
   const region =
     regionNamesZH[
       String(data.region || '').toLowerCase()
     ] ||
-    data.region?.toUpperCase() ||
+    String(data.region || '').toUpperCase() ||
     '未知';
 
   const embed =
@@ -376,6 +387,11 @@ function getBasicEmbed(data) {
           name: '帳號等級',
           value: `\`${accountLevel}\``,
           inline: true
+        },
+        {
+          name: 'PUUID',
+          value: `\`${puuid}\``,
+          inline: false
         }
       );
 
@@ -407,6 +423,7 @@ function getRankEmbed(data) {
 
   const rawHighestRank =
     highestData.patched_tier ||
+    highestData.currenttierpatched ||
     'Unrated';
 
   const highestRank =
@@ -731,6 +748,34 @@ function calculateAgentModeStats(
   return stats;
 }
 
+function getWinRate(data) {
+  if (!data || data.games <= 0) {
+    return '0.0';
+  }
+
+  return (
+    (data.wins /
+      data.games) *
+    100
+  ).toFixed(1);
+}
+
+function getKD(data) {
+  if (!data || data.games <= 0) {
+    return '0.00';
+  }
+
+  if (data.deaths > 0) {
+    return (
+      data.kills /
+      data.deaths
+    ).toFixed(2);
+  }
+
+  return Number(
+    data.kills
+  ).toFixed(2);
+}
 function formatModeStats(stats) {
   const entries =
     Object.entries(stats || {})
@@ -751,36 +796,17 @@ function formatModeStats(stats) {
         modeRaw;
 
       const winRate =
-        data.games > 0
-          ? (
-              (data.wins /
-                data.games) *
-              100
-            ).toFixed(1)
-          : '0.0';
+        getWinRate(data);
 
       const kd =
-        data.deaths > 0
-          ? (
-              data.kills /
-              data.deaths
-            ).toFixed(2)
-          : Number(
-              data.kills
-            ).toFixed(2);
-
-      const icon =
-        getModeIcon(modeRaw);
-
-      const title =
-        icon
-          ? `[${icon}] **${mode}**`
-          : `**${mode}**`;
+        getKD(data);
 
       return [
-        title,
-        `場次：${data.games}　勝率：${winRate}%`,
-        `勝：${data.wins}　敗：${data.losses}　K/D：${kd}`
+        `**${mode}**`,
+        `場次：${data.games}`,
+        `勝率：${winRate}%`,
+        `勝：${data.wins}　敗：${data.losses}`,
+        `K/D：${kd}`
       ].join('\n');
     })
     .join('\n\n');
@@ -806,23 +832,10 @@ function formatAgentStats(stats) {
         agentRaw;
 
       const winRate =
-        data.games > 0
-          ? (
-              (data.wins /
-                data.games) *
-              100
-            ).toFixed(1)
-          : '0.0';
+        getWinRate(data);
 
       const kd =
-        data.deaths > 0
-          ? (
-              data.kills /
-              data.deaths
-            ).toFixed(2)
-          : Number(
-              data.kills
-            ).toFixed(2);
+        getKD(data);
 
       const avgScore =
         data.games > 0
@@ -832,18 +845,13 @@ function formatAgentStats(stats) {
             )
           : 0;
 
-      const icon =
-        getAgentIcon(agentRaw);
-
-      const title =
-        icon
-          ? `[${icon}] **${agent}**`
-          : `**${agent}**`;
-
       return [
-        title,
-        `場次：${data.games}　勝率：${winRate}%`,
-        `K/D：${kd}　平均戰鬥分數：${avgScore}`
+        `**${agent}**`,
+        `場次：${data.games}`,
+        `勝率：${winRate}%`,
+        `勝：${data.wins}　敗：${data.losses}`,
+        `K/D：${kd}`,
+        `平均戰鬥分數：${avgScore}`
       ].join('\n');
     })
     .join('\n\n');
@@ -858,25 +866,17 @@ function formatAgentModeStats(
     modeRaw;
 
   if (!data || data.games === 0) {
-    return `**${mode}**\n沒有使用此特務的對戰資料。`;
+    return [
+      `**${mode}**`,
+      '沒有使用此特務的對戰資料。'
+    ].join('\n');
   }
 
   const winRate =
-    (
-      (data.wins /
-        data.games) *
-      100
-    ).toFixed(1);
+    getWinRate(data);
 
   const kd =
-    data.deaths > 0
-      ? (
-          data.kills /
-          data.deaths
-        ).toFixed(2)
-      : Number(
-          data.kills
-        ).toFixed(2);
+    getKD(data);
 
   const kda =
     data.deaths > 0
@@ -914,22 +914,19 @@ function formatAgentModeStats(
         data.games
     );
 
-  const icon =
-    getModeIcon(modeRaw);
-
-  const title =
-    icon
-      ? `[${icon}] **${mode}**`
-      : `**${mode}**`;
-
   return [
-    title,
+    `**${mode}**`,
     `場次：${data.games}`,
-    `勝：${data.wins}　敗：${data.losses}`,
     `勝率：${winRate}%`,
-    `擊殺：${data.kills}　死亡：${data.deaths}　助攻：${data.assists}`,
-    `K/D：${kd}　KDA：${kda}`,
-    `平均擊殺：${avgKills}　平均死亡：${avgDeaths}　平均助攻：${avgAssists}`,
+    `勝：${data.wins}　敗：${data.losses}`,
+    `擊殺：${data.kills}`,
+    `死亡：${data.deaths}`,
+    `助攻：${data.assists}`,
+    `K/D：${kd}`,
+    `KDA：${kda}`,
+    `平均擊殺：${avgKills}`,
+    `平均死亡：${avgDeaths}`,
+    `平均助攻：${avgAssists}`,
     `平均戰鬥分數：${avgScore}`
   ].join('\n');
 }
@@ -1199,18 +1196,41 @@ module.exports = {
       let matches = [];
 
       try {
-        const mmrResponse =
-          await VAPI.getMMR({
-            version: 'v3',
-            region,
-            name: accountName,
-            tag: accountTag
-          });
+        if (puuid) {
+          const mmrResponse =
+            await VAPI.getMMRByPUUID({
+              version: 'v2',
+              region,
+              puuid
+            });
 
-        mmr =
-          getApiData(
-            mmrResponse
-          );
+          mmr =
+            getApiData(
+              mmrResponse
+            );
+        } else {
+          const mmrResponse =
+            await VAPI.getMMR({
+              version: 'v2',
+              region,
+              name: accountName,
+              tag: accountTag
+            });
+
+          mmr =
+            getApiData(
+              mmrResponse
+            );
+        }
+
+        console.log(
+          '[VALORANT MMR]:',
+          JSON.stringify(
+            mmr,
+            null,
+            2
+          )
+        );
       } catch (error) {
         console.error(
           '[VALORANT MMR 查詢錯誤]:',
@@ -1295,19 +1315,15 @@ module.exports = {
       });
 
       const message =
-  await interaction.fetchReply();
+        await interaction.fetchReply();
 
-const collector =
-  message.createMessageComponentCollector({
-    time: 15 * 60 * 1000,
-    filter: (buttonInteraction) =>
-      buttonInteraction.user.id ===
-      interaction.user.id
-  });
-
-      if (!collector) {
-        return;
-      }
+      const collector =
+        message.createMessageComponentCollector({
+          time: 15 * 60 * 1000,
+          filter: (buttonInteraction) =>
+            buttonInteraction.user.id ===
+            interaction.user.id
+        });
 
       collector.on(
         'collect',
