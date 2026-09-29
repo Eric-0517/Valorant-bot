@@ -84,41 +84,36 @@ const regionNamesZH = {
   latam: '拉丁美洲區'
 };
 
-const agentNamesZH = {
-  Jett: '婕提',
-  Reyna: '蕾娜',
-  Raze: '芮茲',
-  Phoenix: '菲尼克斯',
-  Yoru: '夜戮',
-  Neon: '妮虹',
-  Iso: '離索',
-  Sage: '聖祈',
-  Chamber: '錢博爾',
-  Cypher: '瑟符',
-  Killjoy: '愷宙',
-  Deadlock: '鋼鎖',
-  Vyse: '維斯',
-  Omen: '歐門',
-  Brimstone: '布史東',
-  Viper: '薇蝮',
-  Astra: '亞星卓',
-  Harbor: '哈泊',
-  Clove: '科芙',
-  Sova: '蘇法',
-  Breach: '叛奇',
-  Skye: '斯凱',
-  'KAY/O': 'KAY/O',
-  Fade: '菲德',
-  Gekko: '蓋克',
-  Tejo: '鐵臂',
-  Miks: '米克什',
-  Waylay: '維蕾'
-};
 
-function getAssetUrl(type, key) {
-  if (!assets || !key) {
-    return null;
-  }
+const agentNamesZH = {
+  'Jett': '婕提',
+  'Reyna': '蕾娜',
+  'Raze': '芮茲',
+  'Phoenix': '菲尼克斯',
+  'Yoru': '夜戮',
+  'Neon': '妮虹',
+  'Iso': '離索',
+  'Sage': '聖祈',
+  'Chamber': '錢博爾',
+  'Cypher': '瑟符',
+  'Killjoy': '愷宙',
+  'Deadlock': '蒂羅',
+  'Vyse': '薇絲',
+  'Omen': '歐門',
+  'Brimstone': '布史東',
+  'Viper': '薇蝮',
+  'Astra': '亞星卓',
+  'Harbor': '哈泊',
+  'Clove': '珂樂芙',
+  'Sova': '蘇法',
+  'Breach': '鐵臂',
+  'Skye': '斯凱',
+  'KAY/O': 'KAY/O',
+  'Fade': '菲德',
+  'Gekko': '蓋克',
+  'Tejo': '戴侯',
+  'Miks': '米克什',
+};
 
   const groups = [
     assets[type],
