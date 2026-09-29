@@ -119,10 +119,10 @@ function getTeamWon(match, player) {
 function createButtons(userId, currentPage) {
   const pages = [
     { id: 'basic', label: '基本資料' },
-    { id: 'rank', label: '排位資訊' },
+    { id: 'rank', label: '牌階資訊' },
     { id: 'mode', label: '模式勝率' },
-    { id: 'agent', label: '英雄數據' },
-    { id: 'reputation', label: '信譽狀態' }
+    { id: 'agent', label: '特務數據' },
+    { id: 'reputation', label: '帳號狀態' }
   ];
 
   return new ActionRowBuilder().addComponents(
@@ -237,7 +237,7 @@ function getRankEmbed(data) {
 
   return new EmbedBuilder()
     .setColor('#5865F2')
-    .setTitle(`排位資訊：${data.name}#${data.tag}`)
+    .setTitle(`牌階資訊：${data.name}#${data.tag}`)
     .addFields(
       {
         name: '目前牌位',
@@ -417,7 +417,7 @@ function formatAgentStats(stats) {
     .slice(0, 10);
 
   if (!entries.length) {
-    return '目前沒有可用的英雄資料。';
+    return '目前沒有可用的特務資料。';
   }
 
   return entries
@@ -461,7 +461,7 @@ function getModeEmbed(data) {
 function getAgentEmbed(data) {
   return new EmbedBuilder()
     .setColor('#5865F2')
-    .setTitle(`英雄數據：${data.name}#${data.tag}`)
+    .setTitle(`特務數據：${data.name}#${data.tag}`)
     .setDescription(
       formatAgentStats(data.agentStats)
     )
@@ -473,9 +473,9 @@ function getAgentEmbed(data) {
 function getReputationEmbed(data) {
   return new EmbedBuilder()
     .setColor('#5865F2')
-    .setTitle(`信譽狀態：${data.name}#${data.tag}`)
+    .setTitle(`帳號狀態：${data.name}#${data.tag}`)
     .setDescription(
-      '目前公開 API 沒有提供可靠的 Riot 官方信譽分數資料，因此無法直接查詢玩家信譽分。'
+      '無資料'
     );
 }
 
@@ -748,10 +748,10 @@ module.exports = {
                   .setLabel(
                     {
                       basic: '基本資料',
-                      rank: '排位資訊',
+                      rank: '牌階資訊',
                       mode: '模式勝率',
-                      agent: '英雄數據',
-                      reputation: '信譽狀態'
+                      agent: '特務數據',
+                      reputation: '帳號狀態'
                     }[page]
                   )
                   .setStyle(ButtonStyle.Primary)
