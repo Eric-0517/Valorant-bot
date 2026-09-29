@@ -71,6 +71,7 @@ const modeNamesZH = {
   Escalation: '超激進戰',
   Premier: 'Premier',
   Replication: '複製模式',
+  'Gauntlet: Glitched': '大亂鬥：異常',
   Snowball: '雪球大戰'
 };
 
