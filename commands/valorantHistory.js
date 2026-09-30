@@ -53,7 +53,7 @@ const agentNamesZH = {
   'Harbor': '哈泊',
   'Clove': '珂樂芙',
   'Sova': '蘇法',
-  'Breach': '鐵臂',
+  'Breach': '叛奇',
   'Skye': '斯凱',
   'KAY/O': 'KAY/O',
   'Fade': '菲德',
