@@ -85,6 +85,47 @@
       "img": "https://bit.ly/3gFlVLQ"
     }
   },
+  "modeEmojis": {
+  "Team Deathmatch": {
+    "emoji": "<:teamdeathmatch:1537480765883813918>"
+  },
+  "Swiftplay": {
+    "emoji": "<:swiftplay:1537480763157778532>"
+  },
+  "Snowball": {
+    "emoji": "<:snowballfight:1537480759667986544>"
+  },
+  "Snowball Fight": {
+    "emoji": "<:snowballfight:1537480759667986544>"
+  },
+  "Replication": {
+    "emoji": "<:replication:1537480757839265822>"
+  },
+  "Premier": {
+    "emoji": "<:premier:1537480755998105670>"
+  },
+  "Custom": {
+    "emoji": "<:customgame:1537480753380720801>"
+  },
+  "Custom Game": {
+    "emoji": "<:customgame:1537480753380720801>"
+  },
+  "Escalation": {
+    "emoji": "<:escalation:1535210075289817179>"
+  },
+  "Deathmatch": {
+    "emoji": "<:deathmatch:1535209913356386344>"
+  },
+  "Spike Rush": {
+    "emoji": "<:spikerush:1535209742828437654>"
+  },
+  "Unrated": {
+    "emoji": "<:normal:1535209463122894958>"
+  },
+  "Normal": {
+    "emoji": "<:normal:1535209463122894958>"
+  }
+},
   "agents": {
     "5f8d3a7f-467b-97f3-062c-13acf203c006": {
       "name": "判奇",
