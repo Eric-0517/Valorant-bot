@@ -336,6 +336,11 @@ function createAgentButtons(
 
   return new ActionRowBuilder().addComponents(
     agents.map(([agentRaw]) => {
+      const agentName =
+        agentNamesZH[agentRaw] ||
+        agentRaw ||
+        'Unknown';
+
       return new ButtonBuilder()
         .setCustomId(
           `valorant_agent_${encodeURIComponent(
@@ -343,7 +348,7 @@ function createAgentButtons(
           )}_${userId}`
         )
         .setLabel(
-          `${getAgentDisplay(agentRaw)} 對戰資料`
+          `${agentName} 對戰資料`
         )
         .setStyle(ButtonStyle.Secondary);
     })
@@ -997,7 +1002,9 @@ function getAgentDetailEmbed(
   agentRaw
 ) {
   const agentName =
-    getAgentDisplay(agentRaw);
+    agentNamesZH[agentRaw] ||
+    agentRaw ||
+    'Unknown';
 
   const modeStats =
     calculateAgentModeStats(
