@@ -8,8 +8,7 @@ const {
 
 const ValorantAPI = require('unofficial-valorant-api');
 const { getArgs } = require('../functions/getArgs');
-const fs = require('fs');
-const path = require('path');
+const assets = require('../assets.json');
 require('dotenv').config();
 
 const apiKey =
