@@ -132,6 +132,38 @@ const agentEmojis = {
   Veto: '<:veto:1537495152191475813>'
 };
 
+const agentAliases = {
+  Jett: ['婕提'],
+  Reyna: ['蕾娜'],
+  Raze: ['芮茲'],
+  Phoenix: ['菲尼克斯'],
+  Yoru: ['夜戮'],
+  Neon: ['妮虹'],
+  Iso: ['離索'],
+  Sage: ['聖祈'],
+  Chamber: ['錢博爾'],
+  Cypher: ['瑟符'],
+  Killjoy: ['愷宙'],
+  Deadlock: ['蒂羅'],
+  Vyse: ['薇絲'],
+  Omen: ['歐門'],
+  Brimstone: ['布史東'],
+  Viper: ['薇蝮'],
+  Astra: ['亞星卓'],
+  Harbor: ['哈泊'],
+  Clove: ['珂樂芙'],
+  Sova: ['蘇法'],
+  Breach: ['叛奇'],
+  Skye: ['絲凱'],
+  'KAY/O': ['KAY/O'],
+  Fade: ['菲德'],
+  Gekko: ['蓋克'],
+  Tejo: ['戴侯'],
+  Miks: ['米克什'],
+  Waylay: ['維蕾'],
+  Veto: ['維托']
+};
+
 function getAgentDisplay(agentRaw) {
   const agentName =
     agentNamesZH[agentRaw] ||
@@ -209,11 +241,48 @@ function getAssetUrl(type, key) {
 }
 
 function getAgentIcon(agentRaw) {
-  return (
-    getAssetUrl('agents', agentRaw) ||
-    getAssetUrl('agent', agentRaw) ||
-    null
-  );
+  if (!assets?.agents || !agentRaw) {
+    return null;
+  }
+
+  const targetNames = [
+    agentNamesZH[agentRaw],
+    ...(agentAliases[agentRaw] || []),
+    agentRaw
+  ]
+    .filter(Boolean)
+    .map((name) =>
+      String(name)
+        .trim()
+        .toLowerCase()
+    );
+
+  const agents =
+    Object.values(assets.agents);
+
+  const agent =
+    agents.find((item) => {
+      if (!item || typeof item !== 'object') {
+        return false;
+      }
+
+      const assetName =
+        String(item.name || '')
+          .trim()
+          .toLowerCase();
+
+      return targetNames.includes(
+        assetName
+      );
+    });
+
+  if (agent?.img) {
+    return String(agent.img)
+      .replace(/^['"]+|['"]+$/g, '')
+      .trim();
+  }
+
+  return null;
 }
 
 function getModeIcon(modeRaw) {
@@ -1017,7 +1086,7 @@ function getAgentDetailEmbed(
 
   const embed =
     new EmbedBuilder()
-      .setColor('#000000')
+      .setColor('#5865F2')
       .setTitle(
         `${agentName} 對戰資料：${data.name}#${data.tag}`
       )
