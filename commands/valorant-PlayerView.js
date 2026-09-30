@@ -132,36 +132,36 @@ const agentEmojis = {
   Veto: '<:veto:1537495152191475813>'
 };
 
-const agentAliases = {
-  Jett: ['婕提'],
-  Reyna: ['蕾娜'],
-  Raze: ['芮茲'],
-  Phoenix: ['菲尼克斯'],
-  Yoru: ['夜戮'],
-  Neon: ['妮虹'],
-  Iso: ['離索'],
-  Sage: ['聖祈'],
-  Chamber: ['錢博爾'],
-  Cypher: ['瑟符'],
-  Killjoy: ['愷宙'],
-  Deadlock: ['蒂羅'],
-  Vyse: ['薇絲'],
-  Omen: ['歐門'],
-  Brimstone: ['布史東'],
-  Viper: ['薇蝮'],
-  Astra: ['亞星卓'],
-  Harbor: ['哈泊'],
-  Clove: ['珂樂芙'],
-  Sova: ['蘇法'],
-  Breach: ['叛奇'],
-  Skye: ['絲凱'],
-  'KAY/O': ['KAY/O'],
-  Fade: ['菲德'],
-  Gekko: ['蓋克'],
-  Tejo: ['戴侯'],
-  Miks: ['米克什'],
-  Waylay: ['維蕾'],
-  Veto: ['維托']
+const agentUUIDs = {
+  Jett: 'add6443a-41bd-e414-f6ad-e58d267f4e95',
+  Breach: '5f8d3a7f-467b-97f3-062c-13acf203c006',
+  Raze: 'f94c3b30-42be-e959-889c-5aa313dba261',
+  Cypher: '117ed9e3-49f3-6512-3ccf-0cada7e3823b',
+  Sova: '320b2a48-4d9b-a075-30f1-1f93a9b638fa',
+  Viper: '707eab51-4836-f488-046a-cda6bf494859',
+  Phoenix: 'eb93336a-449b-9c1b-0a54-a891f7921d69',
+  Brimstone: '9f0d8ba9-4140-b941-57d3-a7ad57c6b417',
+  Sage: '569fdd95-4d10-43ab-ca70-79becc718b46',
+  Reyna: 'a3bfb853-43b2-7238-a4f1-ad90e9e46bcc',
+  Omen: '8e253930-4c05-31dd-1b6c-968525494517',
+  Killjoy: '1e58de9c-4950-5125-93e9-a0aee9f98746',
+  Skye: '6f2a04ca-43e0-be17-7f36-b3908627744d',
+  Yoru: '7f94d92c-4234-0a36-9646-3a87eb8b5c89',
+  Astra: '41fb69c1-4189-7b37-f117-bcaf1e96f1bf',
+  'KAY/O': '60152f77-4b7e-4cf7-9ed2-bc2249b182df',
+  Chamber: '22a51f21-4876-269b-da28-a69c6b003502',
+  Neon: 'bb25429d-479d-0219-b22c-a25e1c07f434',
+  Fade: 'dac83725-429a-4314-01e3-6388d09745d0',
+  Harbor: '20a40711-4182-5206-8e3b-4af4f5555509',
+  Gekko: 'e370fa57-4757-3604-3648-499e1f642d3f',
+  Deadlock: 'cc8b02ea-440e-308f-298d-9ab2ac928a5f',
+  Iso: '0f657528-43ed-15d4-2f60-a18a70098b00',
+  Clove: '1e481f69-4236-7714-369e-30be0d421544',
+  Vyse: '91038692-4217-2680-e37d-b9a38ef2f928',
+  Tejo: 'a2f19586-4f40-4228-a532-62a229a4a754',
+  Miks: 'b529944a-431a-e555-520e-b8a74e503378',
+  Waylay: 'c9320e4b-4b2e-f498-8422-38b4d8d17961',
+  Veto: 'd40232ef-457a-9721-a185-5fb8a4b41295'
 };
 
 function getAgentDisplay(agentRaw) {
@@ -245,44 +245,23 @@ function getAgentIcon(agentRaw) {
     return null;
   }
 
-  const targetNames = [
-    agentNamesZH[agentRaw],
-    ...(agentAliases[agentRaw] || []),
-    agentRaw
-  ]
-    .filter(Boolean)
-    .map((name) =>
-      String(name)
-        .trim()
-        .toLowerCase()
-    );
+  const uuid =
+    agentUUIDs[agentRaw];
 
-  const agents =
-    Object.values(assets.agents);
-
-  const agent =
-    agents.find((item) => {
-      if (!item || typeof item !== 'object') {
-        return false;
-      }
-
-      const assetName =
-        String(item.name || '')
-          .trim()
-          .toLowerCase();
-
-      return targetNames.includes(
-        assetName
-      );
-    });
-
-  if (agent?.img) {
-    return String(agent.img)
-      .replace(/^['"]+|['"]+$/g, '')
-      .trim();
+  if (!uuid) {
+    return null;
   }
 
-  return null;
+  const agent =
+    assets.agents[uuid];
+
+  if (!agent?.img) {
+    return null;
+  }
+
+  return String(agent.img)
+    .replace(/^['"]+|['"]+$/g, '')
+    .trim();
 }
 
 function getModeIcon(modeRaw) {
