@@ -8,8 +8,7 @@ const {
 
 const ValorantAPI = require('unofficial-valorant-api');
 const { getArgs } = require('../functions/getArgs');
-const fs = require('fs');
-const path = require('path');
+const assets = require('../assets.json');
 require('dotenv').config();
 
 const apiKey =
@@ -17,20 +16,6 @@ const apiKey =
   process.env.VALORANT_API_KEY;
 
 const VAPI = new ValorantAPI(apiKey);
-
-let assets = {};
-
-try {
-  const assetsPath = path.join(__dirname, '../assets.json');
-
-  if (fs.existsSync(assetsPath)) {
-    assets = JSON.parse(
-      fs.readFileSync(assetsPath, 'utf8')
-    );
-  }
-} catch (error) {
-  console.error('[assets.json 載入錯誤]:', error);
-}
 
 const rankNamesZH = {
   Unrated: '牌階未定',
@@ -105,7 +90,7 @@ const agentNamesZH = {
   Harbor: '哈泊',
   Clove: '珂樂芙',
   Sova: '蘇法',
-  Breach: '鐵臂',
+  Breach: '判奇',
   Skye: '斯凱',
   'KAY/O': 'KAY/O',
   Fade: '菲德',
@@ -114,6 +99,51 @@ const agentNamesZH = {
   Miks: '米克什',
   Waylay: '維蕾'
 };
+
+const agentEmojis = {
+  Astra: '<:astra:1535231845556555896>',
+  Breach: '<:breach:1535231843639758930>',
+  Brimstone: '<:brimstone:1535231841886281799>',
+  Cypher: '<:cypher:1535231839508234351>',
+  Jett: '<:jett:1535231837767598111>',
+  Killjoy: '<:killjoy:1535231835968110643>',
+  Omen: '<:omen:1535231834009636874>',
+  Phoenix: '<:phoenix:1535231832042504283>',
+  Raze: '<:raze:1535231830352072764>',
+  Reyna: '<:reyna:1535231828531613827>',
+  Sage: '<:sage:1535231826761883708>',
+  Skye: '<:skye:1535231824840892497>',
+  Sova: '<:sova:1535231822739284039>',
+  Viper: '<:viper:1535231820717883413>',
+  Yoru: '<:yoru:1535231817676750902>',
+  'KAY/O': '<:kayo:1535231815772676178>',
+  Chamber: '<:chamber:1535231813386244166>',
+  Neon: '<:neon:1535231811653992458>',
+  Fade: '<:fade:1535231809443332118>',
+  Harbor: '<:harbor:1535231806486351953>',
+  Gekko: '<:gekko:1535231804049457162>',
+  Deadlock: '<:deadlock:1535231802082459769>',
+  Iso: '<:iso:1537472171243348028>',
+  Clove: '<:clove:1537472160832950282>',
+  Vyse: '<:vyse:1537472178788761620>',
+  Tejo: '<:tejo:1537495150043865138>',
+  Miks: '<:miks:1537495147758092358>',
+  Waylay: '<:waylay:1537495155857424475>',
+  Veto: '<:veto:1537495152191475813>'
+};
+
+function getAgentDisplay(agentRaw) {
+  const agentName =
+    agentNamesZH[agentRaw] ||
+    agentRaw ||
+    'Unknown';
+
+  const emoji =
+    agentEmojis[agentRaw] ||
+    '';
+
+  return `${emoji}${agentName}`;
+}
 
 function getAssetUrl(type, key) {
   if (!assets || !key) {
@@ -306,10 +336,6 @@ function createAgentButtons(
 
   return new ActionRowBuilder().addComponents(
     agents.map(([agentRaw]) => {
-      const agentName =
-        agentNamesZH[agentRaw] ||
-        agentRaw;
-
       return new ButtonBuilder()
         .setCustomId(
           `valorant_agent_${encodeURIComponent(
@@ -317,7 +343,7 @@ function createAgentButtons(
           )}_${userId}`
         )
         .setLabel(
-          `${agentName} 對戰資料`
+          `${getAgentDisplay(agentRaw)} 對戰資料`
         )
         .setStyle(ButtonStyle.Secondary);
     })
@@ -777,6 +803,7 @@ function getKD(data) {
     data.kills
   ).toFixed(2);
 }
+
 function formatModeStats(stats) {
   const entries =
     Object.entries(stats || {})
@@ -829,8 +856,7 @@ function formatAgentStats(stats) {
   return entries
     .map(([agentRaw, data]) => {
       const agent =
-        agentNamesZH[agentRaw] ||
-        agentRaw;
+        getAgentDisplay(agentRaw);
 
       const winRate =
         getWinRate(data);
@@ -847,7 +873,7 @@ function formatAgentStats(stats) {
           : 0;
 
       return [
-        `**${agent}**`,
+        `${agent}`,
         `場次：${data.games}`,
         `勝率：${winRate}%`,
         `勝：${data.wins}　敗：${data.losses}`,
@@ -971,8 +997,7 @@ function getAgentDetailEmbed(
   agentRaw
 ) {
   const agentName =
-    agentNamesZH[agentRaw] ||
-    agentRaw;
+    getAgentDisplay(agentRaw);
 
   const modeStats =
     calculateAgentModeStats(
