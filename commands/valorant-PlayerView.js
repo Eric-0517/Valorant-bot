@@ -351,6 +351,10 @@ function createPageButtons(userId) {
     {
       id: 'agent',
       label: '特務數據'
+    },
+    {
+      id: 'history',
+      label: '歷史賽季資料'
     }
   ];
 
@@ -483,6 +487,443 @@ function getBasicEmbed(data) {
   }
 
   return embed;
+}
+
+function getSeasonalData(mmr) {
+  const sources = [
+    mmr?.by_season,
+    mmr?.data?.by_season,
+    mmr?.bySeason,
+    mmr?.data?.bySeason,
+    mmr?.seasonal,
+    mmr?.data?.seasonal
+  ];
+
+  for (const source of sources) {
+    if (
+      source &&
+      typeof source === 'object' &&
+      !Array.isArray(source)
+    ) {
+      return source;
+    }
+  }
+
+  return {};
+}
+
+function parseSeasonId(seasonId) {
+  const match =
+    String(seasonId || '')
+      .toLowerCase()
+      .match(/^e(\d+)a(\d+)$/);
+
+  if (!match) {
+    return {
+      episode: 0,
+      act: 0
+    };
+  }
+
+  return {
+    episode: Number(match[1]),
+    act: Number(match[2])
+  };
+}
+
+function formatSeasonName(seasonId) {
+  const parsed =
+    parseSeasonId(seasonId);
+
+  if (
+    parsed.episode > 0 &&
+    parsed.act > 0
+  ) {
+    return `Episode ${parsed.episode} Act ${parsed.act}`;
+  }
+
+  return seasonId;
+}
+
+function getValidSeasonEntries(mmr) {
+  const seasonal =
+    getSeasonalData(mmr);
+
+  return Object.entries(
+    seasonal
+  )
+    .filter(([seasonId, data]) => {
+      const parsed =
+        parseSeasonId(seasonId);
+
+      if (
+        parsed.episode < 1 ||
+        parsed.act < 1
+      ) {
+        return false;
+      }
+
+      return (
+        data &&
+        typeof data === 'object' &&
+        !data.error &&
+        (
+          data.number_of_games != null ||
+          data.wins != null ||
+          data.final_rank_patched ||
+          Array.isArray(
+            data.act_rank_wins
+          )
+        )
+      );
+    })
+    .sort((a, b) => {
+      const seasonA =
+        parseSeasonId(a[0]);
+
+      const seasonB =
+        parseSeasonId(b[0]);
+
+      if (
+        seasonB.episode !==
+        seasonA.episode
+      ) {
+        return (
+          seasonB.episode -
+          seasonA.episode
+        );
+      }
+
+      return (
+        seasonB.act -
+        seasonA.act
+      );
+    });
+}
+
+function getSeasonHighestRank(data) {
+  const ranks = [];
+
+  if (data?.final_rank_patched) {
+    ranks.push(
+      data.final_rank_patched
+    );
+  }
+
+  for (const item of
+    data?.act_rank_wins || []) {
+    if (
+      item &&
+      item.patched_tier &&
+      item.patched_tier !== 'Unrated'
+    ) {
+      ranks.push(
+        item.patched_tier
+      );
+    }
+  }
+
+  if (!ranks.length) {
+    return '牌階未定';
+  }
+
+  let highestRank =
+    ranks[0];
+
+  let highestTier =
+    -1;
+
+  for (const rank of ranks) {
+    const tier =
+      getRankTier(rank);
+
+    if (tier > highestTier) {
+      highestTier = tier;
+      highestRank = rank;
+    }
+  }
+
+  return (
+    rankNamesZH[highestRank] ||
+    highestRank
+  );
+}
+
+function getRankTier(rank) {
+  const tiers = {
+    Unrated: 0,
+    'Iron 1': 1,
+    'Iron 2': 2,
+    'Iron 3': 3,
+    'Bronze 1': 4,
+    'Bronze 2': 5,
+    'Bronze 3': 6,
+    'Silver 1': 7,
+    'Silver 2': 8,
+    'Silver 3': 9,
+    'Gold 1': 10,
+    'Gold 2': 11,
+    'Gold 3': 12,
+    'Platinum 1': 13,
+    'Platinum 2': 14,
+    'Platinum 3': 15,
+    'Diamond 1': 16,
+    'Diamond 2': 17,
+    'Diamond 3': 18,
+    'Ascendant 1': 19,
+    'Ascendant 2': 20,
+    'Ascendant 3': 21,
+    'Immortal 1': 22,
+    'Immortal 2': 23,
+    'Immortal 3': 24,
+    Radiant: 25
+  };
+
+  return (
+    tiers[rank] ??
+    0
+  );
+}
+
+function getSeasonRankDistribution(data) {
+  const distribution = {};
+
+  for (const item of
+    data?.act_rank_wins || []) {
+    if (
+      !item ||
+      !item.patched_tier ||
+      item.patched_tier === 'Unrated'
+    ) {
+      continue;
+    }
+
+    const rank =
+      item.patched_tier;
+
+    distribution[rank] =
+      (distribution[rank] || 0) + 1;
+  }
+
+  return Object.entries(
+    distribution
+  )
+    .sort(
+      (a, b) =>
+        getRankTier(b[0]) -
+        getRankTier(a[0])
+    );
+}
+
+function formatSeasonDistribution(data) {
+  const distribution =
+    getSeasonRankDistribution(
+      data
+    );
+
+  if (!distribution.length) {
+    return '無牌階紀錄';
+  }
+
+  return distribution
+    .map(
+      ([rank, count]) =>
+        `${rankNamesZH[rank] || rank}：${count} 次`
+    )
+    .join('\n');
+}
+
+function getHistoryEmbeds(data) {
+  const seasonEntries =
+    getValidSeasonEntries(
+      data.mmr
+    );
+
+  if (!seasonEntries.length) {
+    return [
+      new EmbedBuilder()
+        .setColor('#5865F2')
+        .setTitle(
+          `歷史賽季資料：${data.name}#${data.tag}`
+        )
+        .setDescription(
+          '目前沒有可用的歷史賽季資料。'
+        )
+    ];
+  }
+
+  const historyLines =
+    seasonEntries.map(
+      ([seasonId, seasonData]) => {
+        const games =
+          Number(
+            seasonData.number_of_games || 0
+          );
+
+        const wins =
+          Number(
+            seasonData.wins || 0
+          );
+
+        const losses =
+          Math.max(
+            games - wins,
+            0
+          );
+
+        const winRate =
+          games > 0
+            ? (
+                (wins / games) *
+                100
+              ).toFixed(1)
+            : '0.0';
+
+        const highestRank =
+          getSeasonHighestRank(
+            seasonData
+          );
+
+        return [
+          `**${formatSeasonName(
+            seasonId
+          )}**`,
+          `最高牌階：${rankNamesZH[seasonData.final_rank_patched] || seasonData.final_rank_patched || highestRank}`,
+          `場次：${games}　勝場：${wins}　敗場：${losses}`,
+          `勝率：${winRate}%`
+        ].join('\n');
+      }
+    );
+
+  const distributionLines =
+    seasonEntries.map(
+      ([seasonId, seasonData]) => {
+        return [
+          `**${formatSeasonName(
+            seasonId
+          )}**`,
+          formatSeasonDistribution(
+            seasonData
+          )
+        ].join('\n');
+      }
+    );
+
+  const historyChunks = [];
+  let currentHistory = '';
+
+  for (const line of historyLines) {
+    if (
+      currentHistory.length +
+        line.length +
+        2 >
+      3800
+    ) {
+      if (currentHistory) {
+        historyChunks.push(
+          currentHistory
+        );
+      }
+
+      currentHistory =
+        line;
+    } else {
+      currentHistory +=
+        currentHistory
+          ? `\n\n${line}`
+          : line;
+    }
+  }
+
+  if (currentHistory) {
+    historyChunks.push(
+      currentHistory
+    );
+  }
+
+  const distributionChunks = [];
+  let currentDistribution = '';
+
+  for (const line of distributionLines) {
+    if (
+      currentDistribution.length +
+        line.length +
+        2 >
+      3800
+    ) {
+      if (currentDistribution) {
+        distributionChunks.push(
+          currentDistribution
+        );
+      }
+
+      currentDistribution =
+        line;
+    } else {
+      currentDistribution +=
+        currentDistribution
+          ? `\n\n${line}`
+          : line;
+    }
+  }
+
+  if (currentDistribution) {
+    distributionChunks.push(
+      currentDistribution
+    );
+  }
+
+  const embeds = [];
+
+  for (
+    let i = 0;
+    i < historyChunks.length;
+    i++
+  ) {
+    embeds.push(
+      new EmbedBuilder()
+        .setColor('#5865F2')
+        .setTitle(
+          i === 0
+            ? `歷史賽季資料：${data.name}#${data.tag}`
+            : `歷史賽季資料：${data.name}#${data.tag}（續）`
+        )
+        .setDescription(
+          [
+            i === 0
+              ? '**歷史賽季牌階紀錄**'
+              : '**歷史賽季牌階紀錄（續）**',
+            historyChunks[i]
+          ].join('\n\n')
+        )
+    );
+  }
+
+  for (
+    let i = 0;
+    i < distributionChunks.length;
+    i++
+  ) {
+    embeds.push(
+      new EmbedBuilder()
+        .setColor('#5865F2')
+        .setTitle(
+          i === 0
+            ? `歷史賽季資料：${data.name}#${data.tag}`
+            : `歷史賽季資料：${data.name}#${data.tag}（續）`
+        )
+        .setDescription(
+          [
+            i === 0
+              ? '**每個賽季的牌階勝場分布**'
+              : '**每個賽季的牌階勝場分布（續）**',
+            distributionChunks[i]
+          ].join('\n\n')
+        )
+    );
+  }
+
+  return embeds;
 }
 
 function getRankEmbed(data) {
@@ -1095,17 +1536,28 @@ function getAgentDetailEmbed(
 function getEmbed(data, page) {
   switch (page) {
     case 'rank':
-      return getRankEmbed(data);
+      return [
+        getRankEmbed(data)
+      ];
 
     case 'mode':
-      return getModeEmbed(data);
+      return [
+        getModeEmbed(data)
+      ];
 
     case 'agent':
-      return getAgentEmbed(data);
+      return [
+        getAgentEmbed(data)
+      ];
+
+    case 'history':
+      return getHistoryEmbeds(data);
 
     case 'basic':
     default:
-      return getBasicEmbed(data);
+      return [
+        getBasicEmbed(data)
+      ];
   }
 }
 
@@ -1436,12 +1888,11 @@ module.exports = {
                 );
 
               await buttonInteraction.update({
-                embeds: [
+                embeds:
                   getEmbed(
                     data,
                     page
-                  )
-                ],
+                  ),
                 components:
                   createAllRows(
                     interaction.user.id,
