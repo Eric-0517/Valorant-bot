@@ -84,41 +84,36 @@ const regionNamesZH = {
   latam: '拉丁美洲區'
 };
 
-const agentNamesZH = {
-  Jett: '婕提',
-  Reyna: '蕾娜',
-  Raze: '芮茲',
-  Phoenix: '菲尼克斯',
-  Yoru: '夜戮',
-  Neon: '妮虹',
-  Iso: '離索',
-  Sage: '聖祈',
-  Chamber: '錢博爾',
-  Cypher: '瑟符',
-  Killjoy: '愷宙',
-  Deadlock: '蒂羅',
-  Vyse: '維斯',
-  Omen: '歐門',
-  Brimstone: '布史東',
-  Viper: '薇蝮',
-  Astra: '亞星卓',
-  Harbor: '哈泊',
-  Clove: '科芙',
-  Sova: '蘇法',
-  Breach: '叛奇',
-  Skye: '斯凱',
-  'KAY/O': 'KAY/O',
-  Fade: '菲德',
-  Gekko: '蓋克',
-  Tejo: '戴侯',
-  Miks: '米克什',
-  Waylay: '維蕾'
-};
 
-function getAssetUrl(type, key) {
-  if (!assets || !key) {
-    return null;
-  }
+const agentNamesZH = {
+  'Jett': '婕提',
+  'Reyna': '蕾娜',
+  'Raze': '芮茲',
+  'Phoenix': '菲尼克斯',
+  'Yoru': '夜戮',
+  'Neon': '妮虹',
+  'Iso': '離索',
+  'Sage': '聖祈',
+  'Chamber': '錢博爾',
+  'Cypher': '瑟符',
+  'Killjoy': '愷宙',
+  'Deadlock': '蒂羅',
+  'Vyse': '薇絲',
+  'Omen': '歐門',
+  'Brimstone': '布史東',
+  'Viper': '薇蝮',
+  'Astra': '亞星卓',
+  'Harbor': '哈泊',
+  'Clove': '珂樂芙',
+  'Sova': '蘇法',
+  'Breach': '鐵臂',
+  'Skye': '斯凱',
+  'KAY/O': 'KAY/O',
+  'Fade': '菲德',
+  'Gekko': '蓋克',
+  'Tejo': '戴侯',
+  'Miks': '米克什',
+};
 
   const groups = [
     assets[type],
@@ -1151,4 +1146,342 @@ module.exports = {
     if (!name || !tag) {
       return await interaction.editReply({
         content:
-          '<a:cross:1535233642312507443> 玩家名稱格式錯誤，請使用 `玩家名稱#標籤`，例如：`
+          '<a:cross:1535233642312507443> 玩家名稱格式錯誤，請使用 `玩家名稱#標籤`，例如：`eric0517#7632`'
+      });
+    }
+
+    const region =
+      interaction.options.getString(
+        'region'
+      ) || 'ap';
+
+    try {
+      const accountResponse =
+        await VAPI.getAccount({
+          name,
+          tag
+        });
+
+      const account =
+        getApiData(
+          accountResponse
+        );
+
+      if (!account) {
+        return await interaction.editReply({
+          content:
+            '<a:cross:1535233642312507443> 找不到此 Riot ID，請確認玩家名稱與標籤是否正確。'
+        });
+      }
+
+      const puuid =
+        account.puuid ||
+        account.data?.puuid;
+
+      const accountName =
+        account.name ||
+        account.data?.name ||
+        name;
+
+      const accountTag =
+        account.tag ||
+        account.data?.tag ||
+        tag;
+
+      let mmr = null;
+      let matches = [];
+
+      try {
+        if (puuid) {
+          const mmrResponse =
+            await VAPI.getMMRByPUUID({
+              version: 'v2',
+              region,
+              puuid
+            });
+
+          mmr =
+            getApiData(
+              mmrResponse
+            );
+        } else {
+          const mmrResponse =
+            await VAPI.getMMR({
+              version: 'v2',
+              region,
+              name: accountName,
+              tag: accountTag
+            });
+
+          mmr =
+            getApiData(
+              mmrResponse
+            );
+        }
+
+        console.log(
+          '[VALORANT MMR]:',
+          JSON.stringify(
+            mmr,
+            null,
+            2
+          )
+        );
+      } catch (error) {
+        console.error(
+          '[VALORANT MMR 查詢錯誤]:',
+          error
+        );
+      }
+
+      try {
+        let matchResponse;
+
+        if (puuid) {
+          matchResponse =
+            await VAPI.getMatchesByPUUID({
+              region,
+              puuid,
+              size: 20
+            });
+        } else {
+          matchResponse =
+            await VAPI.getMatches({
+              region,
+              name: accountName,
+              tag: accountTag,
+              size: 20
+            });
+        }
+
+        matches =
+          getApiData(
+            matchResponse
+          ) || [];
+
+        if (!Array.isArray(matches)) {
+          matches =
+            matches?.data ||
+            [];
+        }
+      } catch (error) {
+        console.error(
+          '[VALORANT 對戰查詢錯誤]:',
+          error
+        );
+      }
+
+      const modeStats =
+        calculateModeStats(
+          matches,
+          puuid,
+          accountName,
+          accountTag
+        );
+
+      const agentStats =
+        calculateAgentStats(
+          matches,
+          puuid,
+          accountName,
+          accountTag
+        );
+
+      const data = {
+        account,
+        mmr,
+        matches,
+        modeStats,
+        agentStats,
+        puuid,
+        region,
+        name: accountName,
+        tag: accountTag
+      };
+
+      await interaction.editReply({
+        embeds: [
+          getBasicEmbed(data)
+        ],
+        components:
+          createAllRows(
+            interaction.user.id,
+            agentStats
+          )
+      });
+
+      const message =
+        await interaction.fetchReply();
+
+      const collector =
+        message.createMessageComponentCollector({
+          time: 15 * 60 * 1000,
+          filter: (buttonInteraction) =>
+            buttonInteraction.user.id ===
+            interaction.user.id
+        });
+
+      collector.on(
+        'collect',
+        async (buttonInteraction) => {
+          try {
+            const customId =
+              buttonInteraction.customId;
+
+            if (
+              customId.startsWith(
+                'valorant_info_'
+              )
+            ) {
+              const prefix =
+                'valorant_info_';
+
+              const value =
+                customId.substring(
+                  prefix.length
+                );
+
+              const lastUnderscore =
+                value.lastIndexOf('_');
+
+              const page =
+                value.substring(
+                  0,
+                  lastUnderscore
+                );
+
+              await buttonInteraction.update({
+                embeds: [
+                  getEmbed(
+                    data,
+                    page
+                  )
+                ],
+                components:
+                  createAllRows(
+                    interaction.user.id,
+                    agentStats
+                  )
+              });
+
+              return;
+            }
+
+            if (
+              customId.startsWith(
+                'valorant_agent_'
+              )
+            ) {
+              const prefix =
+                'valorant_agent_';
+
+              const value =
+                customId.substring(
+                  prefix.length
+                );
+
+              const lastUnderscore =
+                value.lastIndexOf('_');
+
+              const encodedAgent =
+                value.substring(
+                  0,
+                  lastUnderscore
+                );
+
+              const agentRaw =
+                decodeURIComponent(
+                  encodedAgent
+                );
+
+              await buttonInteraction.update({
+                embeds: [
+                  getAgentDetailEmbed(
+                    data,
+                    agentRaw
+                  )
+                ],
+                components:
+                  createAllRows(
+                    interaction.user.id,
+                    agentStats
+                  )
+              });
+            }
+          } catch (error) {
+            console.error(
+              '[VALORANT 按鈕錯誤]:',
+              error
+            );
+
+            if (
+              !buttonInteraction.replied &&
+              !buttonInteraction.deferred
+            ) {
+              await buttonInteraction.reply({
+                content:
+                  '<a:cross:1535233642312507443> 操作失敗，請稍後再試。',
+                ephemeral: true
+              });
+            }
+          }
+        }
+      );
+
+      collector.on(
+        'end',
+        async () => {
+          try {
+            const message =
+              await interaction.fetchReply();
+
+            const disabledRows =
+              message.components.map(
+                (row) => {
+                  const actionRow =
+                    new ActionRowBuilder();
+
+                  row.components.forEach(
+                    (component) => {
+                      actionRow.addComponents(
+                        ButtonBuilder.from(
+                          component
+                        ).setDisabled(true)
+                      );
+                    }
+                  );
+
+                  return actionRow;
+                }
+              );
+
+            await interaction.editReply({
+              components:
+                disabledRows
+            });
+          } catch (error) {
+            console.error(
+              '[VALORANT 按鈕關閉錯誤]:',
+              error
+            );
+          }
+        }
+      );
+    } catch (error) {
+      console.error(
+        '[特戰查詢玩家資訊錯誤]:',
+        error
+      );
+
+      const message =
+        error?.error?.message ||
+        error?.message ||
+        '查詢 VALORANT 玩家資料時發生未知錯誤。';
+
+      return await interaction.editReply({
+        content:
+          `<a:cross:1535233642312507443> ${message}`
+      });
+    }
+  }
+};
