@@ -17,22 +17,7 @@ const apiKey =
 
 const VAPI = new ValorantAPI(apiKey);
 
-let assets = {};
-
-try {
-  const assetsPath = path.join(__dirname, '../assets.json');
-
-  if (fs.existsSync(assetsPath)) {
-    assets = JSON.parse(
-      fs.readFileSync(assetsPath, 'utf8')
-    );
-  }
-} catch (error) {
-  console.error('[assets.json 載入錯誤]:', error);
-}
-
 const rankNamesZH = {
-  Unrated: '牌階未定',
   'Iron 1': '鐵牌 1',
   'Iron 2': '鐵牌 2',
   'Iron 3': '鐵牌 3',
@@ -57,7 +42,7 @@ const rankNamesZH = {
   'Immortal 1': '神話 1',
   'Immortal 2': '神話 2',
   'Immortal 3': '神話 3',
-  Radiant: '輻能戰魂'
+  'Radiant': '輻能戰魂'
 };
 
 const modeNamesZH = {
@@ -114,63 +99,84 @@ const agentNamesZH = {
   Waylay: '維蕾'
 };
 
-function getAssetUrl(type, key) {
-  if (!assets || !key) {
-    return null;
+function getApiData(response) {
+  if (!response) return null;
+
+  if (
+    response.data &&
+    typeof response.data === 'object' &&
+    response.data.data !== undefined
+  ) {
+    return response.data.data;
   }
 
-  const groups = [
-    assets[type],
-    assets[type?.toLowerCase?.()],
-    assets.agents,
-    assets.modes,
-    assets.ranks,
-    assets.agent,
-    assets.mode,
-    assets.rank
-  ];
+  if (response.data !== undefined) {
+    return response.data;
+  }
+
+  return response;
+}
+
+function getAssetUrl(type, key) {
+  if (!key) return null;
+
+  const normalizedKey = String(key).trim();
+  const lowerKey = normalizedKey.toLowerCase();
+
+  const groups = [];
+
+  if (assets && typeof assets === 'object') {
+    if (assets[type]) groups.push(assets[type]);
+    if (assets[type?.toLowerCase()]) {
+      groups.push(assets[type.toLowerCase()]);
+    }
+
+    if (type === 'agent' && assets.agents) {
+      groups.push(assets.agents);
+    }
+
+    if (type === 'mode' && assets.modes) {
+      groups.push(assets.modes);
+    }
+
+    if (type === 'rank' && assets.ranks) {
+      groups.push(assets.ranks);
+    }
+  }
+
+  groups.push(assets);
 
   for (const group of groups) {
-    if (!group || typeof group !== 'object') {
-      continue;
-    }
+    if (!group || typeof group !== 'object') continue;
 
-    if (group[key]) {
-      if (typeof group[key] === 'string') {
-        return group[key];
+    const possibleKeys = [
+      normalizedKey,
+      lowerKey,
+      normalizedKey.replace(/\s+/g, ''),
+      lowerKey.replace(/\s+/g, '')
+    ];
+
+    for (const possibleKey of possibleKeys) {
+      if (group[possibleKey]) {
+        const value = group[possibleKey];
+
+        if (typeof value === 'string') {
+          return value;
+        }
+
+        if (value && typeof value === 'object') {
+          return (
+            value.icon ||
+            value.iconUrl ||
+            value.image ||
+            value.imageUrl ||
+            value.displayIcon ||
+            value.small ||
+            value.large ||
+            null
+          );
+        }
       }
-
-      if (typeof group[key] === 'object') {
-        return (
-          group[key].icon ||
-          group[key].iconUrl ||
-          group[key].image ||
-          group[key].imageUrl ||
-          group[key].displayIcon ||
-          group[key].small ||
-          group[key].large ||
-          null
-        );
-      }
-    }
-  }
-
-  if (assets[key]) {
-    if (typeof assets[key] === 'string') {
-      return assets[key];
-    }
-
-    if (typeof assets[key] === 'object') {
-      return (
-        assets[key].icon ||
-        assets[key].iconUrl ||
-        assets[key].image ||
-        assets[key].imageUrl ||
-        assets[key].displayIcon ||
-        assets[key].small ||
-        assets[key].large ||
-        null
-      );
     }
   }
 
@@ -178,31 +184,31 @@ function getAssetUrl(type, key) {
 }
 
 function getAgentIcon(agentRaw) {
-  return (
-    getAssetUrl('agents', agentRaw) ||
-    getAssetUrl('agent', agentRaw) ||
-    null
-  );
+  return getAssetUrl('agent', agentRaw);
 }
 
 function getModeIcon(modeRaw) {
-  return (
-    getAssetUrl('modes', modeRaw) ||
-    getAssetUrl('mode', modeRaw) ||
-    null
-  );
+  return getAssetUrl('mode', modeRaw);
 }
 
 function getRankIcon(mmr) {
+  const currentData =
+    mmr?.current_data ||
+    mmr?.currentData ||
+    {};
+
+  if (currentData.images) {
+    return (
+      currentData.images.small ||
+      currentData.images.large ||
+      currentData.images.icon ||
+      null
+    );
+  }
+
   return (
-    mmr?.current_data?.images?.small ||
-    mmr?.current_data?.images?.large ||
-    mmr?.current_data?.images?.icon ||
-    getAssetUrl(
-      'ranks',
-      mmr?.current_data?.currenttierpatched ||
-      mmr?.current_data?.currenttier_patched
-    )
+    getAssetUrl('rank', currentData.currenttierpatched) ||
+    getAssetUrl('rank', currentData.currenttier)
   );
 }
 
@@ -216,45 +222,496 @@ function getPlayerAvatar(account) {
   );
 }
 
-function getPlayerFromMatch(
-  match,
-  puuid,
-  name,
-  tag
-) {
-  const allPlayers =
-    match?.players?.all_players || [];
+function getRankName(mmr) {
+  return (
+    mmr?.current_data?.currenttierpatched ||
+    mmr?.current_data?.currenttier ||
+    mmr?.currenttierpatched ||
+    mmr?.currenttier ||
+    '未定級'
+  );
+}
 
-  return allPlayers.find((player) => {
-    if (puuid && player.puuid === puuid) {
-      return true;
+function getElo(mmr) {
+  return (
+    mmr?.current_data?.elo ??
+    mmr?.current_data?.mmr ??
+    mmr?.elo ??
+    '未知'
+  );
+}
+
+function getRR(mmr) {
+  return (
+    mmr?.current_data?.ranking_in_tier ??
+    mmr?.current_data?.rankingInTier ??
+    mmr?.ranking_in_tier ??
+    '未知'
+  );
+}
+
+function getLastRRChange(mmr) {
+  return (
+    mmr?.current_data?.last_change ??
+    mmr?.current_data?.lastChange ??
+    mmr?.last_change ??
+    '未知'
+  );
+}
+
+function getHighestRank(mmr) {
+  const highest =
+    mmr?.highest_rank ||
+    mmr?.highestRank ||
+    mmr?.highest_rank_tier ||
+    null;
+
+  return highest || '未知';
+}
+
+function getHighestSeason(mmr) {
+  return (
+    mmr?.highest_rank?.season ||
+    mmr?.highestRank?.season ||
+    mmr?.highest_rank_season ||
+    '未知'
+  );
+}
+
+function getPlayerName(account) {
+  const name =
+    account?.name ||
+    account?.data?.name ||
+    '未知';
+
+  const tag =
+    account?.tag ||
+    account?.data?.tag ||
+    '';
+
+  return tag ? `${name}#${tag}` : name;
+}
+
+function getRegion(account, fallbackRegion) {
+  return (
+    account?.region ||
+    account?.data?.region ||
+    fallbackRegion ||
+    '未知'
+  ).toLowerCase();
+}
+
+function getMatchData(match) {
+  return (
+    match?.data ||
+    match
+  );
+}
+
+function getMatchPlayer(match, puuid) {
+  const data = getMatchData(match);
+
+  const players =
+    data?.players ||
+    data?.players?.all_players ||
+    data?.players?.allPlayers ||
+    [];
+
+  if (!Array.isArray(players)) return null;
+
+  return (
+    players.find(player =>
+      player?.puuid === puuid
+    ) ||
+    players.find(player =>
+      player?.subject === puuid
+    ) ||
+    null
+  );
+}
+
+function getMatchMode(match) {
+  const data = getMatchData(match);
+
+  return (
+    data?.metadata?.mode ||
+    data?.metadata?.game_mode ||
+    data?.metadata?.queue ||
+    data?.mode ||
+    'Unknown'
+  );
+}
+
+function getMatchWinner(match) {
+  const data = getMatchData(match);
+
+  return (
+    data?.teams ||
+    {}
+  );
+}
+
+function getPlayerKills(player) {
+  return Number(
+    player?.stats?.kills ??
+    player?.kills ??
+    0
+  );
+}
+
+function getPlayerDeaths(player) {
+  return Number(
+    player?.stats?.deaths ??
+    player?.deaths ??
+    0
+  );
+}
+
+function getPlayerAssists(player) {
+  return Number(
+    player?.stats?.assists ??
+    player?.assists ??
+    0
+  );
+}
+
+function getPlayerScore(player) {
+  return Number(
+    player?.stats?.score ??
+    player?.score ??
+    0
+  );
+}
+
+function getPlayerAgent(player) {
+  return (
+    player?.character ||
+    player?.agent ||
+    player?.character_name ||
+    player?.agent_name ||
+    'Unknown'
+  );
+}
+
+function isPlayerWin(match, player) {
+  const data = getMatchData(match);
+
+  const team =
+    player?.team?.toLowerCase();
+
+  if (!team) return false;
+
+  const teams =
+    data?.teams ||
+    {};
+
+  const teamData =
+    teams[team];
+
+  if (teamData?.won !== undefined) {
+    return Boolean(teamData.won);
+  }
+
+  if (teamData?.win !== undefined) {
+    return Boolean(teamData.win);
+  }
+
+  return false;
+}
+
+function calculateModeStats(matches, puuid) {
+  const stats = {};
+
+  for (const match of matches || []) {
+    const player = getMatchPlayer(match, puuid);
+
+    if (!player) continue;
+
+    const modeRaw = getMatchMode(match);
+    const mode = modeNamesZH[modeRaw] || modeRaw;
+
+    if (!stats[modeRaw]) {
+      stats[modeRaw] = {
+        name: mode,
+        games: 0,
+        wins: 0,
+        losses: 0,
+        kills: 0,
+        deaths: 0,
+        assists: 0
+      };
     }
 
-    return (
-      String(player.name || '').toLowerCase() ===
-        String(name || '').toLowerCase() &&
-      String(player.tag || '').toLowerCase() ===
-        String(tag || '').toLowerCase()
-    );
-  });
+    const item = stats[modeRaw];
+
+    item.games++;
+
+    if (isPlayerWin(match, player)) {
+      item.wins++;
+    } else {
+      item.losses++;
+    }
+
+    item.kills += getPlayerKills(player);
+    item.deaths += getPlayerDeaths(player);
+    item.assists += getPlayerAssists(player);
+  }
+
+  return stats;
 }
 
-function getTeamWon(match, player) {
-  if (!player || !match?.teams) {
-    return null;
+function calculateAgentStats(matches, puuid) {
+  const stats = {};
+
+  for (const match of matches || []) {
+    const player = getMatchPlayer(match, puuid);
+
+    if (!player) continue;
+
+    const agentRaw = getPlayerAgent(player);
+
+    if (!stats[agentRaw]) {
+      stats[agentRaw] = {
+        name: agentNamesZH[agentRaw] || agentRaw,
+        games: 0,
+        wins: 0,
+        losses: 0,
+        kills: 0,
+        deaths: 0,
+        assists: 0,
+        score: 0
+      };
+    }
+
+    const item = stats[agentRaw];
+
+    item.games++;
+
+    if (isPlayerWin(match, player)) {
+      item.wins++;
+    } else {
+      item.losses++;
+    }
+
+    item.kills += getPlayerKills(player);
+    item.deaths += getPlayerDeaths(player);
+    item.assists += getPlayerAssists(player);
+    item.score += getPlayerScore(player);
   }
 
-  if (player.team === 'Red') {
-    return match.teams.red?.has_won === true;
-  }
-
-  if (player.team === 'Blue') {
-    return match.teams.blue?.has_won === true;
-  }
-
-  return null;
+  return stats;
 }
 
+function calculateAgentModeStats(matches, puuid, agentRaw) {
+  const stats = {};
+
+  for (const match of matches || []) {
+    const player = getMatchPlayer(match, puuid);
+
+    if (!player) continue;
+
+    const currentAgent = getPlayerAgent(player);
+
+    if (
+      String(currentAgent).toLowerCase() !==
+      String(agentRaw).toLowerCase()
+    ) {
+      continue;
+    }
+
+    const modeRaw = getMatchMode(match);
+
+    if (
+      modeRaw !== 'Competitive' &&
+      modeRaw !== 'Unrated'
+    ) {
+      continue;
+    }
+
+    if (!stats[modeRaw]) {
+      stats[modeRaw] = {
+        name:
+          modeNamesZH[modeRaw] ||
+          modeRaw,
+        games: 0,
+        wins: 0,
+        losses: 0,
+        kills: 0,
+        deaths: 0,
+        assists: 0,
+        score: 0
+      };
+    }
+
+    const item = stats[modeRaw];
+
+    item.games++;
+
+    if (isPlayerWin(match, player)) {
+      item.wins++;
+    } else {
+      item.losses++;
+    }
+
+    item.kills += getPlayerKills(player);
+    item.deaths += getPlayerDeaths(player);
+    item.assists += getPlayerAssists(player);
+    item.score += getPlayerScore(player);
+  }
+
+  return stats;
+}
+
+function getWinRate(item) {
+  if (!item || !item.games) return 0;
+
+  return (
+    item.wins /
+    item.games *
+    100
+  );
+}
+
+function getKD(item) {
+  if (!item || !item.deaths) {
+    if (item?.kills > 0) {
+      return item.kills.toFixed(2);
+    }
+
+    return '0.00';
+  }
+
+  return (
+    item.kills /
+    item.deaths
+  ).toFixed(2);
+}
+
+function getKDA(item) {
+  if (!item || !item.games) {
+    return '0.00';
+  }
+
+  return (
+    (item.kills +
+      item.assists) /
+    Math.max(item.deaths, 1)
+  ).toFixed(2);
+}
+
+function getAverage(item, key) {
+  if (!item || !item.games) {
+    return 0;
+  }
+
+  return (
+    item[key] /
+    item.games
+  );
+}
+
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString('en-US');
+}
+
+function formatModeStats(stats) {
+  const entries = Object.entries(stats || {});
+
+  if (!entries.length) {
+    return '目前沒有可用的模式資料。';
+  }
+
+  return entries
+    .sort((a, b) =>
+      b[1].games - a[1].games
+    )
+    .map(([raw, item]) => {
+      const icon =
+        getModeIcon(raw);
+
+      const title = icon
+        ? `${icon} **${item.name}**`
+        : `**${item.name}**`;
+
+      return [
+        title,
+        `場次：${item.games}`,
+        `勝率：${getWinRate(item).toFixed(1)}%`,
+        `勝：${item.wins}　敗：${item.losses}`,
+        `K/D：${getKD(item)}`
+      ].join('\n');
+    })
+    .join('\n\n');
+}
+
+function formatAgentStats(stats) {
+  const entries = Object.entries(stats || {});
+
+  if (!entries.length) {
+    return '目前沒有可用的特務資料。';
+  }
+
+  return entries
+    .sort((a, b) =>
+      b[1].games - a[1].games
+    )
+    .map(([raw, item]) => {
+      const icon =
+        getAgentIcon(raw);
+
+      const title = icon
+        ? `${icon} **${item.name}**`
+        : `**${item.name}**`;
+
+      return [
+        title,
+        `場次：${item.games}`,
+        `勝率：${getWinRate(item).toFixed(1)}%`,
+        `勝：${item.wins}　敗：${item.losses}`,
+        `K/D：${getKD(item)}`,
+        `平均戰鬥分數：${Math.round(getAverage(item, 'score'))}`
+      ].join('\n');
+    })
+    .join('\n\n');
+}
+
+function formatAgentModeStats(stats) {
+  const entries = Object.entries(stats || {});
+
+  if (!entries.length) {
+    return '目前沒有此特務的競技模式或一般模式資料。';
+  }
+
+  return entries
+    .sort((a, b) =>
+      b[1].games - a[1].games
+    )
+    .map(([raw, item]) => {
+      const icon =
+        getModeIcon(raw);
+
+      const title = icon
+        ? `${icon} **${item.name}**`
+        : `**${item.name}**`;
+
+      return [
+        title,
+        `場次：${item.games}`,
+        `勝率：${getWinRate(item).toFixed(1)}%`,
+        `勝：${item.wins}　敗：${item.losses}`,
+        `擊殺：${item.kills}`,
+        `死亡：${item.deaths}`,
+        `助攻：${item.assists}`,
+        `K/D：${getKD(item)}`,
+        `KDA：${getKDA(item)}`,
+        `平均擊殺：${getAverage(item, 'kills').toFixed(2)}`,
+        `平均死亡：${getAverage(item, 'deaths').toFixed(2)}`,
+        `平均助攻：${getAverage(item, 'assists').toFixed(2)}`,
+        `平均戰鬥分數：${Math.round(getAverage(item, 'score'))}`
+      ].join('\n');
+    })
+    .join('\n\n');
+}
 function createPageButtons(userId) {
   const pages = [
     {
@@ -276,7 +733,7 @@ function createPageButtons(userId) {
   ];
 
   return new ActionRowBuilder().addComponents(
-    pages.map((page) =>
+    pages.map(page =>
       new ButtonBuilder()
         .setCustomId(
           `valorant_info_${page.id}_${userId}`
@@ -287,54 +744,42 @@ function createPageButtons(userId) {
   );
 }
 
-function createAgentButtons(
-  userId,
-  agentStats
-) {
-  const agents =
-    Object.entries(agentStats || {})
-      .sort(
-        (a, b) =>
-          b[1].games - a[1].games
-      )
-      .slice(0, 5);
+function createAgentButtons(agentStats, userId) {
+  const topAgents = Object.entries(
+    agentStats || {}
+  )
+    .sort((a, b) =>
+      b[1].games - a[1].games
+    )
+    .slice(0, 5);
 
-  if (!agents.length) {
+  if (!topAgents.length) {
     return null;
   }
 
   return new ActionRowBuilder().addComponents(
-    agents.map(([agentRaw]) => {
-      const agentName =
-        agentNamesZH[agentRaw] ||
-        agentRaw;
-
-      return new ButtonBuilder()
+    topAgents.map(([agentRaw, item]) =>
+      new ButtonBuilder()
         .setCustomId(
-          `valorant_agent_${encodeURIComponent(
-            agentRaw
-          )}_${userId}`
+          `valorant_agent_${encodeURIComponent(agentRaw)}_${userId}`
         )
         .setLabel(
-          `${agentName} 對戰資料`
+          `${agentNamesZH[agentRaw] || agentRaw} 對戰資料`
         )
-        .setStyle(ButtonStyle.Secondary);
-    })
+        .setStyle(ButtonStyle.Secondary)
+    )
   );
 }
 
-function createAllRows(
-  userId,
-  agentStats
-) {
+function createAllRows(agentStats, userId) {
   const rows = [
     createPageButtons(userId)
   ];
 
   const agentRow =
     createAgentButtons(
-      userId,
-      agentStats
+      agentStats,
+      userId
     );
 
   if (agentRow) {
@@ -344,48 +789,57 @@ function createAllRows(
   return rows;
 }
 
-function getBasicEmbed(data) {
-  const account = data.account;
-
-  const accountLevel =
-    account?.account_level ??
-    account?.data?.account_level ??
-    '未知';
+function getBasicEmbed(
+  account,
+  mmr,
+  region
+) {
+  const playerName =
+    getPlayerName(account);
 
   const puuid =
-    data.puuid ||
     account?.puuid ||
     account?.data?.puuid ||
     '未知';
 
-  const region =
-    regionNamesZH[
-      String(data.region || '').toLowerCase()
-    ] ||
-    String(data.region || '').toUpperCase() ||
-    '未知';
+  const avatar =
+    getPlayerAvatar(account);
+
+  const rankName =
+    getRankName(mmr);
+
+  const rankZH =
+    rankNamesZH[rankName] ||
+    rankName;
+
+  const rankIcon =
+    getRankIcon(mmr);
+
+  const regionRaw =
+    getRegion(
+      account,
+      region
+    );
+
+  const regionZH =
+    regionNamesZH[regionRaw] ||
+    regionRaw.toUpperCase();
 
   const embed =
     new EmbedBuilder()
-      .setColor('#5865F2')
-      .setTitle(
-        `玩家資訊：${data.name}#${data.tag}`
+      .setTitle('特戰查詢玩家資訊')
+      .setDescription(
+        `**${playerName}**`
       )
       .addFields(
         {
-          name: 'Riot ID',
-          value:
-            `\`${data.name}#${data.tag}\``,
-          inline: true
-        },
-        {
           name: '區域',
-          value: `\`${region}\``,
+          value: regionZH,
           inline: true
         },
         {
-          name: '帳號等級',
-          value: `\`${accountLevel}\``,
+          name: '目前牌位',
+          value: rankZH,
           inline: true
         },
         {
@@ -395,99 +849,91 @@ function getBasicEmbed(data) {
         }
       );
 
-  const avatar =
-    getPlayerAvatar(account);
-
   if (avatar) {
     embed.setThumbnail(avatar);
+  }
+
+  if (rankIcon) {
+    embed.setImage(rankIcon);
   }
 
   return embed;
 }
 
-function getRankEmbed(data) {
-  const currentData =
-    data.mmr?.current_data || {};
+function getRankEmbed(
+  account,
+  mmr
+) {
+  const playerName =
+    getPlayerName(account);
 
-  const highestData =
-    data.mmr?.highest_rank || {};
+  const rankName =
+    getRankName(mmr);
 
-  const rawCurrentRank =
-    currentData.currenttierpatched ||
-    currentData.currenttier_patched ||
-    'Unrated';
-
-  const currentRank =
-    rankNamesZH[rawCurrentRank] ||
-    rawCurrentRank;
-
-  const rawHighestRank =
-    highestData.patched_tier ||
-    highestData.currenttierpatched ||
-    'Unrated';
-
-  const highestRank =
-    rankNamesZH[rawHighestRank] ||
-    rawHighestRank;
+  const rankZH =
+    rankNamesZH[rankName] ||
+    rankName;
 
   const elo =
-    currentData.elo ??
-    '未知';
+    getElo(mmr);
 
   const rr =
-    currentData.ranking_in_tier ??
-    '未知';
+    getRR(mmr);
 
-  const rrChange =
-    currentData.mmr_change_to_last_game;
+  const lastRR =
+    getLastRRChange(mmr);
 
-  const rrChangeText =
-    typeof rrChange === 'number'
-      ? `${rrChange >= 0 ? '+' : ''}${rrChange}`
-      : '未知';
+  const highest =
+    getHighestRank(mmr);
+
+  const highestZH =
+    rankNamesZH[highest] ||
+    highest;
+
+  const highestSeason =
+    getHighestSeason(mmr);
+
+  const rankIcon =
+    getRankIcon(mmr);
 
   const embed =
     new EmbedBuilder()
-      .setColor('#5865F2')
-      .setTitle(
-        `牌階資訊：${data.name}#${data.tag}`
+      .setTitle('牌階資訊')
+      .setDescription(
+        `**${playerName}**`
       )
       .addFields(
         {
-          name: '目前牌階',
-          value: `\`${currentRank}\``,
+          name: '目前牌位',
+          value: rankZH,
           inline: true
         },
         {
           name: 'ELO',
-          value: `\`${elo}\``,
+          value: String(elo),
           inline: true
         },
         {
-          name: '競技分數（RR）',
-          value: `\`${rr} / 100\``,
+          name: 'RR',
+          value: String(rr),
           inline: true
         },
         {
-          name: '上局分數變動',
-          value: `\`${rrChangeText}\``,
+          name: '上場 RR 變化',
+          value: String(lastRR),
           inline: true
         },
         {
-          name: '歷史最高牌階',
-          value: `\`${highestRank}\``,
+          name: '最高牌位',
+          value: highestZH,
           inline: true
         },
         {
-          name: '最高牌階賽季',
-          value:
-            `\`${highestData.season ?? '未知'}\``,
+          name: '最高牌位賽季',
+          value: String(highestSeason),
           inline: true
         }
       );
-
-  const rankIcon =
-    getRankIcon(data.mmr);
 
   if (rankIcon) {
     embed.setThumbnail(rankIcon);
@@ -496,588 +942,307 @@ function getRankEmbed(data) {
   return embed;
 }
 
-function calculateModeStats(
-  matches,
-  puuid,
-  name,
-  tag
+function getModeEmbed(
+  account,
+  modeStats
 ) {
-  const stats = {};
-
-  for (const match of matches || []) {
-    const modeRaw =
-      match?.metadata?.mode ||
-      match?.metadata?.queue ||
-      'Unknown';
-
-    const player =
-      getPlayerFromMatch(
-        match,
-        puuid,
-        name,
-        tag
-      );
-
-    if (!player) {
-      continue;
-    }
-
-    if (!stats[modeRaw]) {
-      stats[modeRaw] = {
-        games: 0,
-        wins: 0,
-        losses: 0,
-        kills: 0,
-        deaths: 0,
-        assists: 0
-      };
-    }
-
-    const item =
-      stats[modeRaw];
-
-    item.games++;
-
-    const result =
-      getTeamWon(
-        match,
-        player
-      );
-
-    if (result === true) {
-      item.wins++;
-    } else if (result === false) {
-      item.losses++;
-    }
-
-    item.kills +=
-      Number(
-        player.stats?.kills || 0
-      );
-
-    item.deaths +=
-      Number(
-        player.stats?.deaths || 0
-      );
-
-    item.assists +=
-      Number(
-        player.stats?.assists || 0
-      );
-  }
-
-  return stats;
-}
-
-function calculateAgentStats(
-  matches,
-  puuid,
-  name,
-  tag
-) {
-  const stats = {};
-
-  for (const match of matches || []) {
-    const player =
-      getPlayerFromMatch(
-        match,
-        puuid,
-        name,
-        tag
-      );
-
-    if (!player) {
-      continue;
-    }
-
-    const agentRaw =
-      player.character ||
-      'Unknown';
-
-    if (!stats[agentRaw]) {
-      stats[agentRaw] = {
-        games: 0,
-        wins: 0,
-        losses: 0,
-        kills: 0,
-        deaths: 0,
-        assists: 0,
-        score: 0
-      };
-    }
-
-    const item =
-      stats[agentRaw];
-
-    item.games++;
-
-    const result =
-      getTeamWon(
-        match,
-        player
-      );
-
-    if (result === true) {
-      item.wins++;
-    } else if (result === false) {
-      item.losses++;
-    }
-
-    item.kills +=
-      Number(
-        player.stats?.kills || 0
-      );
-
-    item.deaths +=
-      Number(
-        player.stats?.deaths || 0
-      );
-
-    item.assists +=
-      Number(
-        player.stats?.assists || 0
-      );
-
-    item.score +=
-      Number(
-        player.stats?.score || 0
-      );
-  }
-
-  return stats;
-}
-
-function calculateAgentModeStats(
-  matches,
-  puuid,
-  name,
-  tag,
-  agentRaw
-) {
-  const stats = {
-    Competitive: {
-      games: 0,
-      wins: 0,
-      losses: 0,
-      kills: 0,
-      deaths: 0,
-      assists: 0,
-      score: 0
-    },
-    Unrated: {
-      games: 0,
-      wins: 0,
-      losses: 0,
-      kills: 0,
-      deaths: 0,
-      assists: 0,
-      score: 0
-    }
-  };
-
-  for (const match of matches || []) {
-    const mode =
-      match?.metadata?.mode;
-
-    if (
-      mode !== 'Competitive' &&
-      mode !== 'Unrated'
-    ) {
-      continue;
-    }
-
-    const player =
-      getPlayerFromMatch(
-        match,
-        puuid,
-        name,
-        tag
-      );
-
-    if (!player) {
-      continue;
-    }
-
-    if (
-      String(player.character || '')
-        .toLowerCase() !==
-      String(agentRaw || '')
-        .toLowerCase()
-    ) {
-      continue;
-    }
-
-    const item =
-      stats[mode];
-
-    item.games++;
-
-    const result =
-      getTeamWon(
-        match,
-        player
-      );
-
-    if (result === true) {
-      item.wins++;
-    } else if (result === false) {
-      item.losses++;
-    }
-
-    item.kills +=
-      Number(
-        player.stats?.kills || 0
-      );
-
-    item.deaths +=
-      Number(
-        player.stats?.deaths || 0
-      );
-
-    item.assists +=
-      Number(
-        player.stats?.assists || 0
-      );
-
-    item.score +=
-      Number(
-        player.stats?.score || 0
-      );
-  }
-
-  return stats;
-}
-
-function getWinRate(data) {
-  if (!data || data.games <= 0) {
-    return '0.0';
-  }
-
-  return (
-    (data.wins /
-      data.games) *
-    100
-  ).toFixed(1);
-}
-
-function getKD(data) {
-  if (!data || data.games <= 0) {
-    return '0.00';
-  }
-
-  if (data.deaths > 0) {
-    return (
-      data.kills /
-      data.deaths
-    ).toFixed(2);
-  }
-
-  return Number(
-    data.kills
-  ).toFixed(2);
-}
-function formatModeStats(stats) {
-  const entries =
-    Object.entries(stats || {})
-      .sort(
-        (a, b) =>
-          b[1].games - a[1].games
-      )
-      .slice(0, 10);
-
-  if (!entries.length) {
-    return '目前沒有可用的模式資料。';
-  }
-
-  return entries
-    .map(([modeRaw, data]) => {
-      const mode =
-        modeNamesZH[modeRaw] ||
-        modeRaw;
-
-      const winRate =
-        getWinRate(data);
-
-      const kd =
-        getKD(data);
-
-      return [
-        `**${mode}**`,
-        `場次：${data.games}`,
-        `勝率：${winRate}%`,
-        `勝：${data.wins}　敗：${data.losses}`,
-        `K/D：${kd}`
-      ].join('\n');
-    })
-    .join('\n\n');
-}
-
-function formatAgentStats(stats) {
-  const entries =
-    Object.entries(stats || {})
-      .sort(
-        (a, b) =>
-          b[1].games - a[1].games
-      )
-      .slice(0, 10);
-
-  if (!entries.length) {
-    return '目前沒有可用的特務資料。';
-  }
-
-  return entries
-    .map(([agentRaw, data]) => {
-      const agent =
-        agentNamesZH[agentRaw] ||
-        agentRaw;
-
-      const winRate =
-        getWinRate(data);
-
-      const kd =
-        getKD(data);
-
-      const avgScore =
-        data.games > 0
-          ? Math.round(
-              data.score /
-                data.games
-            )
-          : 0;
-
-      return [
-        `**${agent}**`,
-        `場次：${data.games}`,
-        `勝率：${winRate}%`,
-        `勝：${data.wins}　敗：${data.losses}`,
-        `K/D：${kd}`,
-        `平均戰鬥分數：${avgScore}`
-      ].join('\n');
-    })
-    .join('\n\n');
-}
-
-function formatAgentModeStats(
-  modeRaw,
-  data
-) {
-  const mode =
-    modeNamesZH[modeRaw] ||
-    modeRaw;
-
-  if (!data || data.games === 0) {
-    return [
-      `**${mode}**`,
-      '沒有使用此特務的對戰資料。'
-    ].join('\n');
-  }
-
-  const winRate =
-    getWinRate(data);
-
-  const kd =
-    getKD(data);
-
-  const kda =
-    data.deaths > 0
-      ? (
-          (data.kills +
-            data.assists) /
-          data.deaths
-        ).toFixed(2)
-      : Number(
-          data.kills +
-          data.assists
-        ).toFixed(2);
-
-  const avgKills =
-    (
-      data.kills /
-      data.games
-    ).toFixed(1);
-
-  const avgDeaths =
-    (
-      data.deaths /
-      data.games
-    ).toFixed(1);
-
-  const avgAssists =
-    (
-      data.assists /
-      data.games
-    ).toFixed(1);
-
-  const avgScore =
-    Math.round(
-      data.score /
-        data.games
+  const playerName =
+    getPlayerName(account);
+
+  return new EmbedBuilder()
+    .setTitle('模式勝率')
+    .setDescription(
+      `**${playerName}**\n\n${formatModeStats(modeStats)}`
     );
-
-  return [
-    `**${mode}**`,
-    `場次：${data.games}`,
-    `勝率：${winRate}%`,
-    `勝：${data.wins}　敗：${data.losses}`,
-    `擊殺：${data.kills}`,
-    `死亡：${data.deaths}`,
-    `助攻：${data.assists}`,
-    `K/D：${kd}`,
-    `KDA：${kda}`,
-    `平均擊殺：${avgKills}`,
-    `平均死亡：${avgDeaths}`,
-    `平均助攻：${avgAssists}`,
-    `平均戰鬥分數：${avgScore}`
-  ].join('\n');
 }
 
-function getModeEmbed(data) {
-  return new EmbedBuilder()
-    .setColor('#5865F2')
-    .setTitle(
-      `模式勝率：${data.name}#${data.tag}`
-    )
-    .setDescription(
-      formatModeStats(
-        data.modeStats
-      )
-    )
-    .setFooter({
-      text:
-        `統計最近 ${data.matches.length} 場對戰`
-    });
-}
+function getAgentEmbed(
+  account,
+  agentStats
+) {
+  const playerName =
+    getPlayerName(account);
 
-function getAgentEmbed(data) {
   return new EmbedBuilder()
-    .setColor('#5865F2')
-    .setTitle(
-      `特務數據：${data.name}#${data.tag}`
-    )
+    .setTitle('特務數據')
     .setDescription(
-      formatAgentStats(
-        data.agentStats
-      )
-    )
-    .setFooter({
-      text:
-        `統計最近 ${data.matches.length} 場對戰`
-    });
+      `**${playerName}**\n\n${formatAgentStats(agentStats)}`
+    );
 }
 
 function getAgentDetailEmbed(
-  data,
-  agentRaw
+  account,
+  agentRaw,
+  agentModeStats
 ) {
+  const playerName =
+    getPlayerName(account);
+
   const agentName =
     agentNamesZH[agentRaw] ||
     agentRaw;
 
-  const modeStats =
-    calculateAgentModeStats(
-      data.matches,
-      data.puuid,
-      data.name,
-      data.tag,
-      agentRaw
-    );
-
-  const embed =
-    new EmbedBuilder()
-      .setColor('#000000')
-      .setTitle(
-        `${agentName} 對戰資料：${data.name}#${data.tag}`
-      )
-      .setDescription(
-        [
-          formatAgentModeStats(
-            'Competitive',
-            modeStats.Competitive
-          ),
-          formatAgentModeStats(
-            'Unrated',
-            modeStats.Unrated
-          )
-        ].join('\n\n')
-      );
-
-  const icon =
+  const agentIcon =
     getAgentIcon(agentRaw);
 
-  if (icon) {
-    embed.setThumbnail(icon);
-  }
+  const title =
+    agentIcon
+      ? `${agentIcon} ${agentName} 對戰資料`
+      : `${agentName} 對戰資料`;
 
-  return embed;
+  return new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(
+      `**${playerName}**\n\n${formatAgentModeStats(agentModeStats)}`
+    );
 }
 
-function getEmbed(data, page) {
+function getEmbed(
+  page,
+  account,
+  mmr,
+  modeStats,
+  agentStats,
+  region
+) {
   switch (page) {
     case 'rank':
-      return getRankEmbed(data);
+      return getRankEmbed(
+        account,
+        mmr
+      );
 
     case 'mode':
-      return getModeEmbed(data);
+      return getModeEmbed(
+        account,
+        modeStats
+      );
 
     case 'agent':
-      return getAgentEmbed(data);
+      return getAgentEmbed(
+        account,
+        agentStats
+      );
 
     case 'basic':
     default:
-      return getBasicEmbed(data);
+      return getBasicEmbed(
+        account,
+        mmr,
+        region
+      );
   }
 }
 
-function getApiData(response) {
-  if (!response) {
-    return null;
+async function getAccountData(
+  name,
+  tag
+) {
+  const response =
+    await VAPI.getAccount({
+      name,
+      tag
+    });
+
+  return getApiData(response);
+}
+
+async function getMMRData(
+  account,
+  region,
+  name,
+  tag
+) {
+  const puuid =
+    account?.puuid ||
+    account?.data?.puuid;
+
+  let response;
+
+  if (puuid) {
+    response =
+      await VAPI.getMMRByPUUID({
+        version: 'v2',
+        region,
+        puuid
+      });
+  } else {
+    response =
+      await VAPI.getMMR({
+        version: 'v2',
+        region,
+        name,
+        tag
+      });
   }
 
-  if (
-    response.data &&
-    response.data.data
-  ) {
-    return response.data.data;
+  return getApiData(response);
+}
+
+async function getMatchesData(
+  account,
+  region,
+  name,
+  tag
+) {
+  const puuid =
+    account?.puuid ||
+    account?.data?.puuid;
+
+  let response;
+
+  if (puuid) {
+    response =
+      await VAPI.getMatchesByPUUID({
+        region,
+        puuid,
+        size: 20
+      });
+  } else {
+    response =
+      await VAPI.getMatches({
+        region,
+        name,
+        tag,
+        size: 20
+      });
   }
 
-  return response.data || null;
+  const data =
+    getApiData(response);
+
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data?.data)) {
+    return data.data;
+  }
+
+  if (Array.isArray(data?.matches)) {
+    return data.matches;
+  }
+
+  return [];
+}
+
+async function disableButtons(
+  message,
+  userId
+) {
+  try {
+    const disabledPageRow =
+      new ActionRowBuilder().addComponents(
+        [
+          {
+            id: 'basic',
+            label: '基本資料'
+          },
+          {
+            id: 'rank',
+            label: '牌階資訊'
+          },
+          {
+            id: 'mode',
+            label: '模式勝率'
+          },
+          {
+            id: 'agent',
+            label: '特務數據'
+          }
+        ].map(page =>
+          new ButtonBuilder()
+            .setCustomId(
+              `valorant_info_${page.id}_${userId}`
+            )
+            .setLabel(page.label)
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(true)
+        )
+      );
+
+    const rows = [
+      disabledPageRow
+    ];
+
+    const components =
+      message.components || [];
+
+    if (components.length > 1) {
+      const oldAgentRow =
+        components[1];
+
+      const disabledAgentButtons =
+        oldAgentRow.components.map(
+          button =>
+            new ButtonBuilder()
+              .setCustomId(
+                button.customId
+              )
+              .setLabel(
+                button.label
+              )
+              .setStyle(
+                ButtonStyle.Secondary
+              )
+              .setDisabled(true)
+        );
+
+      rows.push(
+        new ActionRowBuilder()
+          .addComponents(
+            disabledAgentButtons
+          )
+      );
+    }
+
+    await message.edit({
+      components: rows
+    });
+  } catch (error) {
+    console.error(
+      '[VALORANT 按鈕停用錯誤]:',
+      error
+    );
+  }
 }
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('特戰查詢玩家資訊')
     .setDescription(
-      '查詢 VALORANT 玩家完整資訊'
+      '查詢 VALORANT 玩家資訊、牌階、模式勝率與特務數據'
     )
-    .addStringOption((option) =>
+    .addStringOption(option =>
       option
         .setName('玩家名稱-標籤')
         .setDescription(
-          '未綁定帳號請輸入 Riot ID，例如：eric0517#7632'
+          '例如：eric0517#7632'
         )
         .setRequired(false)
     )
-    .addStringOption((option) =>
+    .addStringOption(option =>
       option
         .setName('region')
         .setDescription(
-          '伺服器區域'
+          '選擇 VALORANT 區域'
         )
+        .setRequired(false)
         .addChoices(
           {
-            name: '亞太區 (AP / TW)',
+            name: '亞太區',
             value: 'ap'
           },
           {
-            name: '北美區 (NA)',
+            name: '北美區',
             value: 'na'
           },
           {
-            name: '歐洲區 (EU)',
+            name: '歐洲區',
             value: 'eu'
           },
           {
-            name: '韓國區 (KR)',
+            name: '韓國區',
             value: 'kr'
           }
         )
@@ -1086,89 +1251,79 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply();
 
-    if (!apiKey) {
-      return await interaction.editReply({
-        content:
-          '<a:cross:1535233642312507443> 系統未設定 API Key，請檢查 `.env` 設定檔！'
-      });
-    }
-
-    const inputTag =
-      interaction.options.getString(
-        '玩家名稱-標籤'
-      );
-
-    let rawPlayerID =
-      inputTag;
-
-    if (!rawPlayerID) {
-      rawPlayerID =
-        await getArgs(
-          interaction
-        );
-    }
-
-    if (!rawPlayerID) {
-      return await interaction.editReply({
-        content:
-          '<a:cross:1535233642312507443> 尚未綁定 VALORANT 帳號，請輸入玩家名稱與標籤，例如：`eric0517#7632`'
-      });
-    }
-
-    rawPlayerID =
-      rawPlayerID.trim();
-
-    const separatorIndex =
-      rawPlayerID.lastIndexOf('#');
-
-    if (
-      separatorIndex <= 0 ||
-      separatorIndex ===
-        rawPlayerID.length - 1
-    ) {
-      return await interaction.editReply({
-        content:
-          '<a:cross:1535233642312507443> 玩家名稱格式錯誤，請使用 `玩家名稱#標籤`，例如：`eric0517#7632`'
-      });
-    }
-
-    const name =
-      rawPlayerID
-        .substring(
-          0,
-          separatorIndex
-        )
-        .trim();
-
-    const tag =
-      rawPlayerID
-        .substring(
-          separatorIndex + 1
-        )
-        .trim();
-
-    if (!name || !tag) {
-      return await interaction.editReply({
-        content:
-          '<a:cross:1535233642312507443> 玩家名稱格式錯誤，請使用 `玩家名稱#標籤`，例如：`eric0517#7632`'
-      });
-    }
-
-    const region =
-      interaction.options.getString(
-        'region'
-      ) || 'ap';
-
     try {
-      const accountResponse =
-        await VAPI.getAccount({
-          name,
-          tag
+      if (!apiKey) {
+        return await interaction.editReply({
+          content:
+            '<a:cross:1535233642312507443> 尚未設定 VALORANT API Key。'
         });
+      }
+
+      let input =
+        interaction.options.getString(
+          '玩家名稱-標籤'
+        );
+
+      const region =
+        interaction.options.getString(
+          'region'
+        ) || 'ap';
+
+      if (!input) {
+        const args =
+          getArgs(interaction);
+
+        if (
+          Array.isArray(args) &&
+          args.length
+        ) {
+          input = args.join(' ');
+        }
+      }
+
+      if (!input) {
+        return await interaction.editReply({
+          content:
+            '<a:cross:1535233642312507443> 請輸入玩家名稱與標籤，例如：`eric0517#7632`'
+        });
+      }
+
+      input =
+        String(input)
+          .trim()
+          .replace(/^["']|["']$/g, '');
+
+      const separatorIndex =
+        input.lastIndexOf('#');
+
+      if (separatorIndex <= 0) {
+        return await interaction.editReply({
+          content:
+            '<a:cross:1535233642312507443> 玩家名稱格式錯誤，請使用 `玩家名稱#標籤`，例如：`eric0517#7632`'
+        });
+      }
+
+      const name =
+        input
+          .slice(0, separatorIndex)
+          .trim();
+
+      const tag =
+        input
+          .slice(separatorIndex + 1)
+          .trim();
+
+      if (!name || !tag) {
+        return await interaction.editReply({
+          content:
+            '<a:cross:1535233642312507443> 玩家名稱格式錯誤，請使用 `玩家名稱#標籤`，例如：`eric0517#7632`'
+        });
+      }
 
       const account =
-        getApiData(
-          accountResponse
+        await getAccountData(
+          name,
+          tag
         );
 
       if (!account) {
@@ -1177,10 +1332,6 @@ module.exports = {
             '<a:cross:1535233642312507443> 找不到此 Riot ID，請確認玩家名稱與標籤是否正確。'
         });
       }
-
-      const puuid =
-        account.puuid ||
-        account.data?.puuid;
 
       const accountName =
         account.name ||
@@ -1192,142 +1343,79 @@ module.exports = {
         account.data?.tag ||
         tag;
 
-      let mmr = null;
-      let matches = [];
+      const puuid =
+        account.puuid ||
+        account.data?.puuid;
 
-      try {
-        if (puuid) {
-          const mmrResponse =
-            await VAPI.getMMRByPUUID({
-              version: 'v2',
-              region,
-              puuid
-            });
-
-          mmr =
-            getApiData(
-              mmrResponse
-            );
-        } else {
-          const mmrResponse =
-            await VAPI.getMMR({
-              version: 'v2',
-              region,
-              name: accountName,
-              tag: accountTag
-            });
-
-          mmr =
-            getApiData(
-              mmrResponse
-            );
-        }
-
-        console.log(
-          '[VALORANT MMR]:',
-          JSON.stringify(
-            mmr,
-            null,
-            2
-          )
-        );
-      } catch (error) {
-        console.error(
-          '[VALORANT MMR 查詢錯誤]:',
-          error
-        );
+      if (!puuid) {
+        return await interaction.editReply({
+          content:
+            '<a:cross:1535233642312507443> 無法取得此玩家的 PUUID。'
+        });
       }
 
-      try {
-        let matchResponse;
-
-        if (puuid) {
-          matchResponse =
-            await VAPI.getMatchesByPUUID({
-              region,
-              puuid,
-              size: 20
-            });
-        } else {
-          matchResponse =
-            await VAPI.getMatches({
-              region,
-              name: accountName,
-              tag: accountTag,
-              size: 20
-            });
-        }
-
-        matches =
-          getApiData(
-            matchResponse
-          ) || [];
-
-        if (!Array.isArray(matches)) {
-          matches =
-            matches?.data ||
-            [];
-        }
-      } catch (error) {
-        console.error(
-          '[VALORANT 對戰查詢錯誤]:',
-          error
+      const mmr =
+        await getMMRData(
+          account,
+          region,
+          accountName,
+          accountTag
         );
-      }
+
+      const matches =
+        await getMatchesData(
+          account,
+          region,
+          accountName,
+          accountTag
+        );
 
       const modeStats =
         calculateModeStats(
           matches,
-          puuid,
-          accountName,
-          accountTag
+          puuid
         );
 
       const agentStats =
         calculateAgentStats(
           matches,
-          puuid,
-          accountName,
-          accountTag
+          puuid
         );
 
-      const data = {
-        account,
-        mmr,
-        matches,
-        modeStats,
-        agentStats,
-        puuid,
-        region,
-        name: accountName,
-        tag: accountTag
-      };
+      const embed =
+        getEmbed(
+          'basic',
+          account,
+          mmr,
+          modeStats,
+          agentStats,
+          region
+        );
 
-      await interaction.editReply({
-        embeds: [
-          getBasicEmbed(data)
-        ],
-        components:
-          createAllRows(
-            interaction.user.id,
-            agentStats
-          )
-      });
+      const rows =
+        createAllRows(
+          agentStats,
+          interaction.user.id
+        );
 
       const message =
-        await interaction.fetchReply();
+        await interaction.editReply({
+          embeds: [embed],
+          components: rows
+        });
 
       const collector =
         message.createMessageComponentCollector({
           time: 15 * 60 * 1000,
-          filter: (buttonInteraction) =>
+
+          filter: buttonInteraction =>
             buttonInteraction.user.id ===
             interaction.user.id
         });
 
       collector.on(
         'collect',
-        async (buttonInteraction) => {
+        async buttonInteraction => {
           try {
             const customId =
               buttonInteraction.customId;
@@ -1337,34 +1425,30 @@ module.exports = {
                 'valorant_info_'
               )
             ) {
-              const prefix =
-                'valorant_info_';
-
-              const value =
-                customId.substring(
-                  prefix.length
-                );
-
-              const lastUnderscore =
-                value.lastIndexOf('_');
+              const parts =
+                customId.split('_');
 
               const page =
-                value.substring(
-                  0,
-                  lastUnderscore
+                parts[2];
+
+              await buttonInteraction.deferUpdate();
+
+              const newEmbed =
+                getEmbed(
+                  page,
+                  account,
+                  mmr,
+                  modeStats,
+                  agentStats,
+                  region
                 );
 
-              await buttonInteraction.update({
-                embeds: [
-                  getEmbed(
-                    data,
-                    page
-                  )
-                ],
+              await buttonInteraction.message.edit({
+                embeds: [newEmbed],
                 components:
                   createAllRows(
-                    interaction.user.id,
-                    agentStats
+                    agentStats,
+                    interaction.user.id
                   )
               });
 
@@ -1379,36 +1463,65 @@ module.exports = {
               const prefix =
                 'valorant_agent_';
 
-              const value =
-                customId.substring(
+              const content =
+                customId.slice(
                   prefix.length
                 );
 
               const lastUnderscore =
-                value.lastIndexOf('_');
+                content.lastIndexOf('_');
+
+              if (
+                lastUnderscore === -1
+              ) {
+                return;
+              }
 
               const encodedAgent =
-                value.substring(
+                content.slice(
                   0,
                   lastUnderscore
                 );
+
+              const agentUserId =
+                content.slice(
+                  lastUnderscore + 1
+                );
+
+              if (
+                agentUserId !==
+                interaction.user.id
+              ) {
+                return;
+              }
 
               const agentRaw =
                 decodeURIComponent(
                   encodedAgent
                 );
 
-              await buttonInteraction.update({
-                embeds: [
-                  getAgentDetailEmbed(
-                    data,
-                    agentRaw
-                  )
-                ],
+              await buttonInteraction.deferUpdate();
+
+              const agentModeStats =
+                calculateAgentModeStats(
+                  matches,
+                  puuid,
+                  agentRaw
+                );
+
+              const newEmbed =
+                getAgentDetailEmbed(
+                  account,
+                  agentRaw,
+                  agentModeStats
+                );
+
+              await buttonInteraction.message.edit({
+                embeds: [newEmbed],
                 components:
                   createAllRows(
-                    interaction.user.id,
-                    agentStats
+                    agentStats,
+                    interaction.user.id
                   )
               });
             }
@@ -1418,16 +1531,18 @@ module.exports = {
               error
             );
 
-            if (
-              !buttonInteraction.replied &&
-              !buttonInteraction.deferred
-            ) {
-              await buttonInteraction.reply({
-                content:
-                  '<a:cross:1535233642312507443> 操作失敗，請稍後再試。',
-                ephemeral: true
-              });
-            }
+            try {
+              if (
+                !buttonInteraction.replied &&
+                !buttonInteraction.deferred
+              ) {
+                await buttonInteraction.reply({
+                  content:
+                    '<a:cross:1535233642312507443> 載入資料時發生錯誤。',
+                  ephemeral: true
+                });
+              }
+            } catch {}
           }
         }
       );
@@ -1435,40 +1550,10 @@ module.exports = {
       collector.on(
         'end',
         async () => {
-          try {
-            const message =
-              await interaction.fetchReply();
-
-            const disabledRows =
-              message.components.map(
-                (row) => {
-                  const actionRow =
-                    new ActionRowBuilder();
-
-                  row.components.forEach(
-                    (component) => {
-                      actionRow.addComponents(
-                        ButtonBuilder.from(
-                          component
-                        ).setDisabled(true)
-                      );
-                    }
-                  );
-
-                  return actionRow;
-                }
-              );
-
-            await interaction.editReply({
-              components:
-                disabledRows
-            });
-          } catch (error) {
-            console.error(
-              '[VALORANT 按鈕關閉錯誤]:',
-              error
-            );
-          }
+          await disableButtons(
+            message,
+            interaction.user.id
+          );
         }
       );
     } catch (error) {
@@ -1477,15 +1562,25 @@ module.exports = {
         error
       );
 
-      const message =
-        error?.error?.message ||
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
         error?.message ||
-        '查詢 VALORANT 玩家資料時發生未知錯誤。';
+        '未知錯誤';
 
-      return await interaction.editReply({
-        content:
-          `<a:cross:1535233642312507443> ${message}`
-      });
+      try {
+        await interaction.editReply({
+          content:
+            `<a:cross:1535233642312507443> 查詢玩家資料時發生錯誤。\n\`${errorMessage}\``,
+          embeds: [],
+          components: []
+        });
+      } catch (replyError) {
+        console.error(
+          '[特戰查詢玩家資訊回覆錯誤]:',
+          replyError
+        );
+      }
     }
   }
 };
