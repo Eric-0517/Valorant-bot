@@ -96,7 +96,7 @@ const agentNamesZH = {
   Chamber: '錢博爾',
   Cypher: '瑟符',
   Killjoy: '愷宙',
-  Deadlock: '鋼鎖',
+  Deadlock: '蒂羅',
   Vyse: '維斯',
   Omen: '歐門',
   Brimstone: '布史東',
@@ -110,7 +110,7 @@ const agentNamesZH = {
   'KAY/O': 'KAY/O',
   Fade: '菲德',
   Gekko: '蓋克',
-  Tejo: '鐵臂',
+  Tejo: '戴侯',
   Miks: '米克什',
   Waylay: '維蕾'
 };
