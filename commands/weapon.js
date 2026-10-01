@@ -7,25 +7,77 @@ const { getArgs } = require('../functions/getArgs');
 const { getData } = require('../api');
 const { handleResponse } = require('../functions/handleResponse');
 
-function findPlayerMatchData(matchData, playerName, playerTag, puuid) {
-  const data =
-    matchData?.data?.data ||
-    matchData?.data ||
-    matchData;
+function getProfileData(response) {
+  return (
+    response?.data?.data ||
+    response?.data ||
+    response ||
+    null
+  );
+}
 
-  if (!data) return null;
+function getPuuid(profileData) {
+  return (
+    profileData?.puuid ||
+    profileData?.account?.puuid ||
+    null
+  );
+}
 
-  const players =
-    data.players ||
-    data.player_stats ||
-    data.playerStats ||
-    [];
+function getMatchList(response) {
+  const data = getProfileData(response);
 
-  if (!Array.isArray(players)) return null;
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data?.data)) {
+    return data.data;
+  }
+
+  if (Array.isArray(data?.matches)) {
+    return data.matches;
+  }
+
+  return [];
+}
+
+function getMatchId(match) {
+  return (
+    match?.metadata?.matchid ||
+    match?.metadata?.matchId ||
+    match?.metadata?.match_id ||
+    match?.matchid ||
+    match?.matchId ||
+    match?.match_id ||
+    match?.id ||
+    null
+  );
+}
+
+function getPlayers(matchData) {
+  const data = getProfileData(matchData);
+
+  if (Array.isArray(data?.players)) {
+    return data.players;
+  }
+
+  if (Array.isArray(data?.players?.all_players)) {
+    return data.players.all_players;
+  }
+
+  if (Array.isArray(data?.players?.allPlayers)) {
+    return data.players.allPlayers;
+  }
+
+  return [];
+}
+
+function findPlayer(matchData, puuid, playerName, playerTag) {
+  const players = getPlayers(matchData);
 
   return players.find((player) => {
     const playerPuuid =
-      player.puuid ||
       player.puuid ||
       player.subject ||
       player.player?.puuid ||
@@ -42,14 +94,14 @@ function findPlayerMatchData(matchData, playerName, playerTag, puuid) {
 
     const name =
       player.name ||
-      player.player?.name ||
       player.gameName ||
+      player.player?.name ||
       player.player?.gameName;
 
     const tag =
       player.tag ||
-      player.player?.tag ||
       player.tagLine ||
+      player.player?.tag ||
       player.player?.tagLine;
 
     return (
@@ -61,177 +113,73 @@ function findPlayerMatchData(matchData, playerName, playerTag, puuid) {
   });
 }
 
-function getPuuid(profileData) {
-  const data =
-    profileData?.data?.data ||
-    profileData?.data ||
-    profileData;
+function getWeaponName(kill) {
+  const weapon =
+    kill?.weapon ||
+    kill?.weapon_name ||
+    kill?.weaponName ||
+    kill?.killer?.weapon;
 
-  return (
-    data?.puuid ||
-    data?.puuid ||
-    data?.account?.puuid ||
-    data?.account?.puuid ||
-    null
-  );
-}
+  if (!weapon) {
+    return '未知武器';
+  }
 
-function getMatchId(match) {
-  return (
-    match?.metadata?.match_id ||
-    match?.metadata?.matchId ||
-    match?.match_id ||
-    match?.matchId ||
-    match?.id ||
-    match?.metadata?.id ||
-    null
-  );
-}
-
-function getWeaponName(value) {
-  if (!value) return '未知武器';
-
-  if (typeof value === 'string') {
-    return value;
+  if (typeof weapon === 'string') {
+    return weapon;
   }
 
   return (
-    value.displayName ||
-    value.display_name ||
-    value.name ||
-    value.weaponName ||
-    value.weapon_name ||
-    value.id ||
+    weapon.displayName ||
+    weapon.display_name ||
+    weapon.name ||
+    weapon.weaponName ||
+    weapon.weapon_name ||
     '未知武器'
   );
 }
 
-function collectWeaponStats(playerData, weaponStatsMap) {
-  if (!playerData) return;
+function getKillList(matchData, puuid) {
+  const data = getProfileData(matchData);
 
-  const weapons =
-    playerData.weapon_stats ||
-    playerData.weaponStats ||
-    playerData.weapons ||
-    playerData.stats?.weapons ||
-    [];
-
-  if (Array.isArray(weapons)) {
-    weapons.forEach((weapon) => {
-      const name = getWeaponName(
-        weapon.weapon ||
-        weapon.weapon_name ||
-        weapon.name ||
-        weapon
-      );
-
-      if (!weaponStatsMap[name]) {
-        weaponStatsMap[name] = {
-          name,
-          roundsPlayed: 0,
-          kills: 0,
-          deaths: 0,
-          headshots: 0,
-          bodyshots: 0,
-          legshots: 0,
-          damage: 0,
-          longestKill: 0,
-        };
-      }
-
-      const item = weaponStatsMap[name];
-
-      item.roundsPlayed += Number(
-        weapon.roundsPlayed ||
-        weapon.rounds_played ||
-        weapon.rounds ||
-        0
-      );
-
-      item.kills += Number(
-        weapon.kills ||
-        weapon.stats?.kills ||
-        0
-      );
-
-      item.deaths += Number(
-        weapon.deaths ||
-        weapon.stats?.deaths ||
-        0
-      );
-
-      item.headshots += Number(
-        weapon.headshots ||
-        weapon.stats?.headshots ||
-        0
-      );
-
-      item.bodyshots += Number(
-        weapon.bodyshots ||
-        weapon.stats?.bodyshots ||
-        0
-      );
-
-      item.legshots += Number(
-        weapon.legshots ||
-        weapon.stats?.legshots ||
-        0
-      );
-
-      item.damage += Number(
-        weapon.damage ||
-        weapon.stats?.damage ||
-        weapon.damageDealt ||
-        0
-      );
-
-      item.longestKill = Math.max(
-        item.longestKill,
-        Number(
-          weapon.longestKillDistance ||
-          weapon.longestKill ||
-          weapon.stats?.longestKillDistance ||
-          0
-        )
-      );
-    });
+  if (!Array.isArray(data?.kills)) {
+    return [];
   }
 
-  const kills =
-    playerData.kills ||
-    playerData.stats?.kills ||
-    0;
+  return data.kills.filter((kill) => {
+    const killer =
+      kill?.killer ||
+      kill?.attacker ||
+      kill?.killer_puuid ||
+      kill?.killerPuuid;
 
-  const damage =
-    playerData.damage ||
-    playerData.stats?.damage ||
-    0;
-
-  const weapon =
-    playerData.weapon ||
-    playerData.lastWeapon ||
-    playerData.stats?.weapon;
-
-  if (weapon && (kills || damage)) {
-    const name = getWeaponName(weapon);
-
-    if (!weaponStatsMap[name]) {
-      weaponStatsMap[name] = {
-        name,
-        roundsPlayed: 0,
-        kills: 0,
-        deaths: 0,
-        headshots: 0,
-        bodyshots: 0,
-        legshots: 0,
-        damage: 0,
-        longestKill: 0,
-      };
+    if (typeof killer === 'string') {
+      return (
+        String(killer).toLowerCase() ===
+        String(puuid).toLowerCase()
+      );
     }
 
-    weaponStatsMap[name].kills += Number(kills);
-    weaponStatsMap[name].damage += Number(damage);
-  }
+    const killerPuuid =
+      killer?.puuid ||
+      killer?.subject ||
+      kill?.killer_puuid ||
+      kill?.killerPuuid;
+
+    return (
+      killerPuuid &&
+      String(killerPuuid).toLowerCase() ===
+        String(puuid).toLowerCase()
+    );
+  });
+}
+
+function getPlayerStats(player) {
+  return (
+    player?.stats ||
+    player?.player_stats ||
+    player?.playerStats ||
+    {}
+  );
 }
 
 module.exports = {
@@ -258,7 +206,7 @@ module.exports = {
       (await getArgs(interaction));
 
     if (!rawPlayerID) {
-      return await interaction.editReply({
+      return interaction.editReply({
         content:
           '<a:cross:1535233642312507443> 請提供玩家名稱與標籤，或先進行帳號綁定！',
       });
@@ -271,13 +219,13 @@ module.exports = {
       cleanPlayerID.split('#');
 
     const playerName =
-      parts[0] || '';
+      parts.shift() || '';
 
     const playerTag =
-      parts.slice(1).join('#') || '';
+      parts.join('#') || '';
 
     if (!playerName || !playerTag) {
-      return await interaction.editReply({
+      return interaction.editReply({
         content:
           '<a:cross:1535233642312507443> 玩家名稱格式錯誤，請使用「名稱#標籤」。',
       });
@@ -285,7 +233,7 @@ module.exports = {
 
     const playerID =
       encodeURIComponent(
-        cleanPlayerID
+        `${playerName}#${playerTag}`
       );
 
     const [
@@ -302,24 +250,20 @@ module.exports = {
       ),
     ]);
 
-    const dataSources = [
-      matchData,
-      profileData
-    ];
-
     if (
       !(await handleResponse(
         interaction,
-        dataSources
+        [
+          matchData,
+          profileData
+        ]
       ))
     ) {
       return;
     }
 
     const rawProfile =
-      profileData?.data?.data ||
-      profileData?.data ||
-      profileData;
+      getProfileData(profileData);
 
     const author =
       getAuthor(
@@ -328,30 +272,17 @@ module.exports = {
       );
 
     const puuid =
-      getPuuid(profileData);
+      getPuuid(rawProfile);
 
-    const matchList =
-      matchData?.data?.data ||
-      matchData?.data ||
-      [];
-
-    let matches = [];
-
-    if (Array.isArray(matchList)) {
-      matches = matchList;
-    } else if (
-      Array.isArray(matchList?.matches)
-    ) {
-      matches =
-        matchList.matches;
-    } else if (
-      Array.isArray(matchList?.data)
-    ) {
-      matches =
-        matchList.data;
+    if (!puuid) {
+      return interaction.editReply({
+        content:
+          '<a:cross:1535233642312507443> 無法取得玩家 PUUID。',
+      });
     }
 
-    const weaponStatsMap = {};
+    const matches =
+      getMatchList(matchData);
 
     const matchIds = [
       ...new Set(
@@ -361,28 +292,153 @@ module.exports = {
       )
     ].slice(0, 10);
 
+    const weaponStats = {};
+
     for (const matchId of matchIds) {
       try {
-        const detailData =
+        const detail =
           await getData(
             playerID,
             DataType.MATCH_INFO,
             matchId
           );
 
-        const playerData =
-          findPlayerMatchData(
-            detailData,
+        const player =
+          findPlayer(
+            detail,
+            puuid,
             playerName,
-            playerTag,
+            playerTag
+          );
+
+        if (!player) {
+          continue;
+        }
+
+        const stats =
+          getPlayerStats(player);
+
+        const deaths =
+          Number(
+            stats.deaths || 0
+          );
+
+        const playerKills =
+          getKillList(
+            detail,
             puuid
           );
 
-        if (playerData) {
-          collectWeaponStats(
-            playerData,
-            weaponStatsMap
-          );
+        for (const kill of playerKills) {
+          const weaponName =
+            getWeaponName(kill);
+
+          if (!weaponStats[weaponName]) {
+            weaponStats[weaponName] = {
+              name: weaponName,
+              kills: 0,
+              deaths: 0,
+              headshots: 0,
+              bodyshots: 0,
+              legshots: 0,
+              damage: 0,
+              rounds: 0,
+            };
+          }
+
+          weaponStats[weaponName].kills++;
+        }
+
+        const playerWeapons =
+          player.weapons ||
+          player.weapon_stats ||
+          player.weaponStats ||
+          [];
+
+        if (Array.isArray(playerWeapons)) {
+          for (const weapon of playerWeapons) {
+            const weaponName =
+              getWeaponName(weapon);
+
+            if (!weaponStats[weaponName]) {
+              weaponStats[weaponName] = {
+                name: weaponName,
+                kills: 0,
+                deaths: 0,
+                headshots: 0,
+                bodyshots: 0,
+                legshots: 0,
+                damage: 0,
+                rounds: 0,
+              };
+            }
+
+            const item =
+              weaponStats[weaponName];
+
+            item.kills += Number(
+              weapon.kills || 0
+            );
+
+            item.deaths += Number(
+              weapon.deaths || 0
+            );
+
+            item.headshots += Number(
+              weapon.headshots || 0
+            );
+
+            item.bodyshots += Number(
+              weapon.bodyshots || 0
+            );
+
+            item.legshots += Number(
+              weapon.legshots || 0
+            );
+
+            item.damage += Number(
+              weapon.damage ||
+              weapon.damageDealt ||
+              0
+            );
+
+            item.rounds += Number(
+              weapon.roundsPlayed ||
+              weapon.rounds ||
+              0
+            );
+          }
+        }
+
+        if (
+          playerWeapons.length === 0 &&
+          playerKills.length > 0
+        ) {
+          const rounds =
+            Number(
+              stats.roundsPlayed ||
+              stats.rounds_played ||
+              0
+            );
+
+          for (const weaponName of Object.keys(
+            weaponStats
+          )) {
+            weaponStats[weaponName].rounds +=
+              rounds;
+          }
+        }
+
+        for (const weaponName of Object.keys(
+          weaponStats
+        )) {
+          if (
+            weaponStats[weaponName].deaths === 0 &&
+            deaths > 0
+          ) {
+            weaponStats[weaponName].deaths +=
+              deaths;
+          }
         }
       } catch (error) {
         console.warn(
@@ -391,87 +447,63 @@ module.exports = {
       }
     }
 
-    let topWeapons =
-      Object.values(
-        weaponStatsMap
-      )
+    const topWeapons =
+      Object.values(weaponStats)
         .filter(
           (weapon) =>
-            weapon.kills > 0 ||
-            weapon.damage > 0
+            weapon.kills > 0
         )
         .sort(
           (a, b) =>
-            b.kills - a.kills ||
-            b.damage - a.damage
+            b.kills - a.kills
         )
         .slice(0, 5)
         .map((weapon) => {
-          const totalShots =
+          const shots =
             weapon.headshots +
             weapon.bodyshots +
             weapon.legshots;
 
           const headshotPct =
-            totalShots > 0
+            shots > 0
               ? (
-                  (weapon.headshots /
-                    totalShots) *
+                  weapon.headshots /
+                  shots *
                   100
                 ).toFixed(1) + '%'
               : '0%';
 
-          const roundsPlayed =
-            weapon.roundsPlayed > 0
-              ? weapon.roundsPlayed
-              : 'N/A';
-
           const damagePerRound =
-            weapon.roundsPlayed > 0
+            weapon.rounds > 0
               ? (
                   weapon.damage /
-                  weapon.roundsPlayed
+                  weapon.rounds
                 ).toFixed(1)
-              : weapon.damage > 0
-                ? weapon.damage.toFixed(1)
-                : '0';
-
-          const longestKillMeters =
-            weapon.longestKill > 0
-              ? (
-                  weapon.longestKill /
-                  100
-                ).toFixed(0)
               : 'N/A';
 
           return {
-            name: weapon.name,
-            roundsPlayed,
-            longestKillMeters,
-            kills: weapon.kills,
-            deaths: weapon.deaths,
+            ...weapon,
             headshotPct,
             damagePerRound,
           };
         });
 
-    const maxWeaponsToShow =
-      topWeapons.length;
-
     const weaponEmbed =
       new EmbedBuilder()
         .setColor('#11806A')
         .setAuthor(author)
-        .setThumbnail(author.iconURL)
+        .setThumbnail(
+          author.iconURL
+        )
         .setDescription(
-          `\`\`\`grey\n    前 ${maxWeaponsToShow} 名 - 武器數據統計\n\`\`\``
+          `\`\`\`grey\n    前 ${topWeapons.length} 名 - 武器數據統計\n\`\`\``
         )
         .setFooter({
           text: '僅限競技模式武器數據',
         });
 
     if (
-      maxWeaponsToShow === 0
+      topWeapons.length === 0
     ) {
       weaponEmbed.addFields({
         name: '無武器數據',
@@ -483,7 +515,7 @@ module.exports = {
         (weapon) => {
           weaponEmbed.addFields({
             name:
-              `${weapon.name}     | 使用回合：${weapon.roundsPlayed}     | 最遠擊殺：${weapon.longestKillMeters} 公尺`,
+              `${weapon.name}     | 使用回合：${weapon.rounds || 'N/A'}`,
             value:
               `\`\`\`ansi\n\u001b[2;34m擊殺:${weapon.kills}\u001b[0;0m / \u001b[2;35m死亡:${weapon.deaths}\u001b[0;0m | \u001b[2;36m爆頭率:${weapon.headshotPct}\u001b[0;0m | \u001b[2;33m每回合傷害:${weapon.damagePerRound}\n\`\`\``,
             inline: false,
@@ -492,7 +524,7 @@ module.exports = {
       );
     }
 
-    return await interaction.editReply({
+    return interaction.editReply({
       embeds: [
         weaponEmbed
       ],
