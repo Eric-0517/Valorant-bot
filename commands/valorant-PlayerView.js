@@ -833,7 +833,8 @@ function getHistoryEmbeds(data) {
           `最高牌階：${finalRankZH}`,
           `場次：${games}　勝場：${wins}　敗場：${losses}`,
           `勝率：${winRate}%`,
-          `牌階勝場分布：`,
+          ``,
+          `**牌階勝場分布**`,
           distribution
         ].join('\n');
       }
