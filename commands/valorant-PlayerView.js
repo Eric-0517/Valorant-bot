@@ -90,7 +90,7 @@ const agentNamesZH = {
   Harbor: '哈泊',
   Clove: '珂樂芙',
   Sova: '蘇法',
-  Breach: '判奇',
+  Breach: '叛奇',
   Skye: '斯凱',
   'KAY/O': 'KAY/O',
   Fade: '菲德',
@@ -241,156 +241,34 @@ function getAssetUrl(type, key) {
 }
 
 function getAgentIcon(agentRaw) {
-  if (!assets || !agentRaw) {
+  if (
+    !assets ||
+    !assets.agents ||
+    !agentRaw
+  ) {
     return null;
   }
 
-  const uuid =
-    agentUUIDs[agentRaw];
+  const agentName =
+    agentNamesZH[agentRaw] ||
+    agentRaw;
 
-  const possibleKeys = [
-    uuid,
-    agentRaw,
-    agentNamesZH[agentRaw]
-  ].filter(Boolean);
-
-  const groups = [
-    assets.agents,
-    assets.agent,
-    assets.characters,
-    assets.character
-  ];
-
-  function extractImage(value) {
-    if (!value) {
-      return null;
-    }
-
-    if (typeof value === 'string') {
-      const url =
-        value
+  for (
+    const agent of
+    Object.values(assets.agents)
+  ) {
+    if (
+      agent &&
+      agent.name &&
+      String(agent.name).trim() ===
+        String(agentName).trim()
+    ) {
+      if (
+        typeof agent.img === 'string'
+      ) {
+        return agent.img
           .replace(/^['"]+|['"]+$/g, '')
           .trim();
-
-      if (
-        url.startsWith('http://') ||
-        url.startsWith('https://')
-      ) {
-        return url;
-      }
-
-      return null;
-    }
-
-    if (typeof value === 'object') {
-      const imageKeys = [
-        'img',
-        'icon',
-        'iconUrl',
-        'image',
-        'imageUrl',
-        'displayIcon',
-        'displayIconSmall',
-        'displayIconSmallUrl',
-        'small',
-        'large',
-        'url'
-      ];
-
-      for (const key of imageKeys) {
-        if (value[key]) {
-          const result =
-            extractImage(value[key]);
-
-          if (result) {
-            return result;
-          }
-        }
-      }
-    }
-
-    return null;
-  }
-
-  for (const group of groups) {
-    if (
-      !group ||
-      typeof group !== 'object'
-    ) {
-      continue;
-    }
-
-    for (const key of possibleKeys) {
-      if (group[key]) {
-        const image =
-          extractImage(group[key]);
-
-        if (image) {
-          return image;
-        }
-      }
-    }
-
-    for (const [key, value] of Object.entries(group)) {
-      const lowerKey =
-        String(key).toLowerCase();
-
-      const lowerAgent =
-        String(agentRaw).toLowerCase();
-
-      const lowerUUID =
-        String(uuid || '').toLowerCase();
-
-      if (
-        lowerKey === lowerAgent ||
-        (
-          lowerUUID &&
-          lowerKey === lowerUUID
-        )
-      ) {
-        const image =
-          extractImage(value);
-
-        if (image) {
-          return image;
-        }
-      }
-
-      if (
-        value &&
-        typeof value === 'object'
-      ) {
-        const valueUUID =
-          String(
-            value.uuid ||
-            value.id ||
-            value.agent_uuid ||
-            ''
-          ).toLowerCase();
-
-        const valueName =
-          String(
-            value.name ||
-            value.displayName ||
-            value.display_name ||
-            ''
-          ).toLowerCase();
-
-        if (
-          (
-            uuid &&
-            valueUUID ===
-              String(uuid).toLowerCase()
-          ) ||
-          valueName === lowerAgent
-        ) {
-          const image =
-            extractImage(value);
-
-          if (image) {
-            return image;
-          }
-        }
       }
     }
   }
