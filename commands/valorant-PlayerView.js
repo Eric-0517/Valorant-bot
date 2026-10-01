@@ -509,6 +509,28 @@ function getSeasonalData(mmr) {
     }
   }
 
+  for (const root of [
+    mmr,
+    mmr?.data
+  ]) {
+    if (
+      root &&
+      typeof root === 'object'
+    ) {
+      const found = {};
+
+      for (const [key, value] of Object.entries(root)) {
+        if (/^e\d+a\d+$/i.test(key)) {
+          found[key] = value;
+        }
+      }
+
+      if (Object.keys(found).length) {
+        return found;
+      }
+    }
+  }
+
   return {};
 }
 
@@ -539,7 +561,7 @@ function formatSeasonName(seasonId) {
     parsed.episode > 0 &&
     parsed.act > 0
   ) {
-    return `Episode ${parsed.episode} Act ${parsed.act}`;
+    return `第 ${parsed.episode} 幕  第 ${parsed.act} 章`;
   }
 
   return seasonId;
@@ -752,7 +774,7 @@ function getHistoryEmbeds(data) {
     ];
   }
 
-  const historyLines =
+  const seasonBlocks =
     seasonEntries.map(
       ([seasonId, seasonData]) => {
         const games =
@@ -779,8 +801,16 @@ function getHistoryEmbeds(data) {
               ).toFixed(1)
             : '0.0';
 
-        const highestRank =
-          getSeasonHighestRank(
+        const finalRank =
+          seasonData.final_rank_patched ||
+          'Unrated';
+
+        const finalRankZH =
+          rankNamesZH[finalRank] ||
+          finalRank;
+
+        const distribution =
+          formatSeasonDistribution(
             seasonData
           );
 
@@ -788,142 +818,55 @@ function getHistoryEmbeds(data) {
           `**${formatSeasonName(
             seasonId
           )}**`,
-          `最高牌階：${rankNamesZH[seasonData.final_rank_patched] || seasonData.final_rank_patched || highestRank}`,
+          `最終牌階：${finalRankZH}`,
           `場次：${games}　勝場：${wins}　敗場：${losses}`,
-          `勝率：${winRate}%`
+          `勝率：${winRate}%`,
+          `牌階勝場分布：`,
+          distribution
         ].join('\n');
       }
     );
 
-  const distributionLines =
-    seasonEntries.map(
-      ([seasonId, seasonData]) => {
-        return [
-          `**${formatSeasonName(
-            seasonId
-          )}**`,
-          formatSeasonDistribution(
-            seasonData
-          )
-        ].join('\n');
-      }
-    );
+  const chunks = [];
+  let current = '';
 
-  const historyChunks = [];
-  let currentHistory = '';
-
-  for (const line of historyLines) {
+  for (const block of seasonBlocks) {
     if (
-      currentHistory.length +
-        line.length +
+      current.length +
+        block.length +
         2 >
       3800
     ) {
-      if (currentHistory) {
-        historyChunks.push(
-          currentHistory
-        );
+      if (current) {
+        chunks.push(current);
       }
 
-      currentHistory =
-        line;
+      current = block;
     } else {
-      currentHistory +=
-        currentHistory
-          ? `\n\n${line}`
-          : line;
+      current +=
+        current
+          ? `\n\n${block}`
+          : block;
     }
   }
 
-  if (currentHistory) {
-    historyChunks.push(
-      currentHistory
-    );
+  if (current) {
+    chunks.push(current);
   }
 
-  const distributionChunks = [];
-  let currentDistribution = '';
-
-  for (const line of distributionLines) {
-    if (
-      currentDistribution.length +
-        line.length +
-        2 >
-      3800
-    ) {
-      if (currentDistribution) {
-        distributionChunks.push(
-          currentDistribution
-        );
-      }
-
-      currentDistribution =
-        line;
-    } else {
-      currentDistribution +=
-        currentDistribution
-          ? `\n\n${line}`
-          : line;
-    }
-  }
-
-  if (currentDistribution) {
-    distributionChunks.push(
-      currentDistribution
-    );
-  }
-
-  const embeds = [];
-
-  for (
-    let i = 0;
-    i < historyChunks.length;
-    i++
-  ) {
-    embeds.push(
+  return chunks.map(
+    (description, index) =>
       new EmbedBuilder()
         .setColor('#5865F2')
         .setTitle(
-          i === 0
+          chunks.length === 1
             ? `歷史賽季資料：${data.name}#${data.tag}`
-            : `歷史賽季資料：${data.name}#${data.tag}（續）`
+            : `歷史賽季資料：${data.name}#${data.tag}（${index + 1}/${chunks.length}）`
         )
         .setDescription(
-          [
-            i === 0
-              ? '**歷史賽季牌階紀錄**'
-              : '**歷史賽季牌階紀錄（續）**',
-            historyChunks[i]
-          ].join('\n\n')
+          description
         )
-    );
-  }
-
-  for (
-    let i = 0;
-    i < distributionChunks.length;
-    i++
-  ) {
-    embeds.push(
-      new EmbedBuilder()
-        .setColor('#5865F2')
-        .setTitle(
-          i === 0
-            ? `歷史賽季資料：${data.name}#${data.tag}`
-            : `歷史賽季資料：${data.name}#${data.tag}（續）`
-        )
-        .setDescription(
-          [
-            i === 0
-              ? '**每個賽季的牌階勝場分布**'
-              : '**每個賽季的牌階勝場分布（續）**',
-            distributionChunks[i]
-          ].join('\n\n')
-        )
-    );
-  }
-
-  return embeds;
+  );
 }
 
 function getRankEmbed(data) {
