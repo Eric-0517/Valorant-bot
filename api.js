@@ -94,7 +94,7 @@ async function getData(playerID, dataType, matchID = null) {
         response = await axios.get(`${HENRIK_BASE_URL}/v3/matches/ap/${name}/${tag}`, { headers: henrikHeaders });
         break;
       case DataType.MATCH_INFO:
-        response = await axios.get(`${HENRIK_BASE_URL}/v2/match/${matchID}`, { headers: henrikHeaders });
+        response = await axios.get(`${HENRIK_BASE_URL}/v4/match/${matchID}`, { headers: henrikHeaders });
         break;
       default:
         response = await axios.get(`${HENRIK_BASE_URL}/v1/lifetime/matches/ap/${name}/${tag}`, { headers: henrikHeaders });
