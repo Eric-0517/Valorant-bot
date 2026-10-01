@@ -5,13 +5,11 @@ const { ErrorType, DataType } = require('./constants/types');
 const TRN_BASE_URL = 'https://public-api.tracker.gg/api/v2/valorant/standard';
 const HENRIK_BASE_URL = 'https://api.henrikdev.xyz/valorant';
 
-// 優先讀取環境變數中的 TRN_API_KEY
+// 優先讀取TRN_API_KEY
 const TRN_API_KEY = process.env.TRACKER_GG_API_KEY || process.env.TRN_API_KEY || '';
 const HENRIK_API_KEY = process.env.HENRIK_API_KEY || '';
 
-/**
- * 安全解析玩家 ID
- */
+
 function parsePlayerID(playerID) {
   if (!playerID) return { name: '', tag: '', combined: '' };
   
@@ -43,10 +41,10 @@ async function getData(playerID, dataType, matchID = null) {
     try {
       let trnUrl = '';
       if (dataType === DataType.PROFILE || dataType === DataType.COMP_OVERVIEW) {
-        // 符合 TRN v2 /profile/riot/{playerIdentifier} 規格
+        
         trnUrl = `${TRN_BASE_URL}/profile/riot/${combined}`;
       } else if (dataType === DataType.MATCH) {
-        // 符合 TRN v2 /matches/riot/{playerIdentifier} 規格
+        
         trnUrl = `${TRN_BASE_URL}/matches/riot/${combined}`;
       }
 
@@ -70,7 +68,7 @@ async function getData(playerID, dataType, matchID = null) {
     }
   }
 
-  // 次要備援HenrikDev API
+  // 次要HenrikDev API
   const henrikHeaders = {
     'Accept': 'application/json',
     'User-Agent': 'ValoStats-Bot/1.0',
@@ -89,6 +87,9 @@ async function getData(playerID, dataType, matchID = null) {
       case DataType.COMP_OVERVIEW:
         response = await axios.get(`${HENRIK_BASE_URL}/v1/lifetime/matches/ap/${name}/${tag}?mode=competitive&size=10`, { headers: henrikHeaders });
         break;
+        case DataType.WEAPON:
+  response = await axios.get(`${HENRIK_BASE_URL}/v3/matches/ap/${name}/${tag}?mode=competitive&size=10`, { headers: henrikHeaders });
+  break;
       case DataType.MATCH:
         response = await axios.get(`${HENRIK_BASE_URL}/v3/matches/ap/${name}/${tag}`, { headers: henrikHeaders });
         break;
