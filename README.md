@@ -1,5 +1,5 @@
 <h1 align="center">多功能機器蔥</h1>
-<p align="center">專為 VALORANT 玩家打造的 Discord 即時戰績與數據查詢機器人</p>
+<p align="center">專為玩家打造的 Discord 即時戰績與數據查詢機器人</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Node.js-v18+-68a063?style=flat-square&logo=node.js" alt="Node.js">
@@ -9,9 +9,9 @@
 
 ---
 
-## 專案簡介 (Introduction)
+## 簡介 (Introduction)
 
-本專案提供玩家查詢即時段位、MMR 變動、總遊玩時長以及伺服器運作狀態等功能。
+可提供查詢各遊戲資訊(逐步更新)
 
 ---
 
@@ -19,24 +19,14 @@
 
 | 指令 (Command) | 說明 (Description) |
 | :---: | :--- |
-| `/特戰 查詢玩家mmr` | 查詢玩家當前段位、RR 競賽分數、上局分數變動與歷史最高段位 |
-| `/特戰取得玩家總遊玩時長` | 查詢 VALORANT 玩家的總累積遊玩時間與總對戰場數 |
+| `/特戰查詢玩家資訊` | 查詢玩家完整資訊|
+| `/特戰查詢歷史戰績` |查詢歷史對戰並查看詳細玩家數據|
 | `/三角洲今日密碼` | 查詢三角洲行動今日密碼 |
 | `/即刻槍戰` | 查詢遊戲伺服器即時 TCP / HTTP 連線狀態與延遲 |
-| `/特戰競技模式數據統計` | 查詢玩家競技模式綜合生涯數據 |
+| `/特戰組合包` | 查詢目前販售限時組合包|
 | `/特戰查詢上一場戰績` | 查詢玩家最近一場對戰詳細數據 |
 | `/綁定帳號` | 將你的 Valorant 帳號綁定至 Discord ID |
 | `/解除綁定` | 解除 Valorant 帳號與 Discord ID 的綁定 |
 | `/查看目前綁定的帳號` | 查看當前 Discord 帳號已綁定的 Valorant 帳號 |
 | `/查看機器人延遲` | 測試機器人連線延遲狀況 |
 | `/help` | 顯示所有可用指令說明 |
-
----
-
-## 本地開發與安裝 (Getting Started)
-
-### 1. 複製專案與安裝套件
-```bash
-git clone [https://github.com/Eric-0517/Valorant-bot.git](https://github.com/Eric-0517/Valorant-bot.git)
-cd valorant-stats
-npm install
