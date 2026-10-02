@@ -91,7 +91,7 @@ async function getData(playerID, dataType, matchID = null) {
   response = await axios.get(`${HENRIK_BASE_URL}/v3/matches/ap/${name}/${tag}?mode=competitive&size=10`, { headers: henrikHeaders });
   break;
       case DataType.MATCH:
-        response = await axios.get(`${HENRIK_BASE_URL}/v3/matches/ap/${name}/${tag}`, { headers: henrikHeaders });
+        response = await axios.get(`${HENRIK_BASE_URL}/v3/matches/ap/${name}/${tag}?size=25`, { headers: henrikHeaders });
         break;
       case DataType.MATCH_INFO:
         response = await axios.get(`${HENRIK_BASE_URL}/v4/match/${matchID}`, { headers: henrikHeaders });
