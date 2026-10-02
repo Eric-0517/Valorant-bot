@@ -573,7 +573,7 @@ function formatSeasonName(seasonId) {
     parsed.episode > 0 &&
     parsed.act > 0
   ) {
-    return `第 ${parsed.episode} 幕  第 ${parsed.act} 章`;
+    return `${parsed.episode} 賽季  第 ${parsed.act} 章`;
   }
 
   return seasonId;
