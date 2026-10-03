@@ -71,6 +71,7 @@ const modeNamesZH = {
   'Deathmatch': '死鬥模式',
   'Escalation': '超激進戰',
   'Gauntlet: Glitched': '大亂鬥：異常',
+  'Skirmish': '火線交鋒',
   'Team Deathmatch': '團隊死鬥',
 };
 
