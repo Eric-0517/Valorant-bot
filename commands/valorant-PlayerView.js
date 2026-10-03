@@ -57,7 +57,9 @@ const modeNamesZH = {
   Premier: 'Premier',
   Replication: '複製模式',
   'Gauntlet: Glitched': '大亂鬥：異常',
-  Skirmish: '火線交鋒',
+  'Skirmish B': '火線交鋒 B',
+  'Skirmish D': '火線交鋒 D',
+  'Skirmish E': '火線交鋒 E',
   Snowball: '雪球大戰'
 };
 
@@ -164,12 +166,6 @@ const agentUUIDs = {
   Waylay: 'c9320e4b-4b2e-f498-8422-38b4d8d17961',
   Veto: 'd40232ef-457a-9721-a185-5fb8a4b41295'
 };
-
-const agentUUIDToName = Object.fromEntries(
-  Object.entries(agentUUIDs).map(
-    ([name, uuid]) => [uuid.toLowerCase(), name]
-  )
-);
 
 function getAgentDisplay(agentRaw) {
   const agentName =
@@ -351,106 +347,6 @@ function getTeamWon(match, player) {
   }
 
   return null;
-}
-
-function normalizeV4Matches(matches) {
-  if (!Array.isArray(matches)) {
-    return [];
-  }
-
-  return matches.map((match) => {
-    if (
-      match?.players &&
-      !Array.isArray(match.players) &&
-      Array.isArray(match.players.all_players)
-    ) {
-      return match;
-    }
-
-    const players =
-      Array.isArray(match?.players)
-        ? match.players
-        : [];
-
-    const teams =
-      Array.isArray(match?.teams)
-        ? match.teams
-        : [];
-
-    const allPlayers =
-      players.map((player) => {
-        const rawAgent =
-          player?.character ||
-          player?.character_id ||
-          player?.characterId ||
-          'Unknown';
-
-        const agentRaw =
-          agentUUIDToName[
-            String(rawAgent).toLowerCase()
-          ] ||
-          rawAgent;
-
-        return {
-          puuid:
-            player?.puuid,
-          name:
-            player?.name ||
-            player?.game_name ||
-            player?.gameName ||
-            '',
-          tag:
-            player?.tag ||
-            player?.tag_line ||
-            player?.tagLine ||
-            '',
-          team:
-            player?.team ||
-            player?.team_id ||
-            player?.teamId ||
-            '',
-          character:
-            agentRaw,
-          stats:
-            player?.stats || {}
-        };
-      });
-
-    const redTeam =
-      teams.find((team) =>
-        String(
-          team?.team_id ||
-          team?.teamId ||
-          ''
-        ).toLowerCase() === 'red'
-      );
-
-    const blueTeam =
-      teams.find((team) =>
-        String(
-          team?.team_id ||
-          team?.teamId ||
-          ''
-        ).toLowerCase() === 'blue'
-      );
-
-    return {
-      ...match,
-      players: {
-        all_players: allPlayers
-      },
-      teams: {
-        red: {
-          has_won:
-            redTeam?.won === true
-        },
-        blue: {
-          has_won:
-            blueTeam?.won === true
-        }
-      }
-    };
-  });
 }
 
 function createPageButtons(userId) {
@@ -1835,63 +1731,40 @@ module.exports = {
       }
 
       try {
-        const headers = {
-          Accept: 'application/json',
-          'User-Agent': 'ValoStats-Bot/1.0'
-        };
-
-        if (apiKey) {
-          headers.Authorization = apiKey;
-        }
-
-        let matchUrl;
+        let matchResponse;
 
         if (puuid) {
-          matchUrl =
-            `https://api.henrikdev.xyz/valorant/v4/by-puuid/matches/${region}/pc/${encodeURIComponent(puuid)}?size=50`;
+          matchResponse =
+            await VAPI.getMatchesByPUUID({
+              region,
+              puuid,
+              size: 20
+            });
         } else {
-          matchUrl =
-            `https://api.henrikdev.xyz/valorant/v4/matches/${region}/pc/${encodeURIComponent(accountName)}/${encodeURIComponent(accountTag)}?size=50`;
+          matchResponse =
+            await VAPI.getMatches({
+              region,
+              name: accountName,
+              tag: accountTag,
+              size: 20
+            });
         }
-
-        const matchResponse =
-          await fetch(
-            matchUrl,
-            {
-              method: 'GET',
-              headers
-            }
-          );
-
-        if (!matchResponse.ok) {
-          throw new Error(
-            `HTTP ${matchResponse.status}`
-          );
-        }
-
-        const matchJson =
-          await matchResponse.json();
 
         matches =
-          normalizeV4Matches(
-            matchJson?.data || []
-          );
+          getApiData(
+            matchResponse
+          ) || [];
 
         if (!Array.isArray(matches)) {
-          matches = [];
+          matches =
+            matches?.data ||
+            [];
         }
-
-        console.log(
-          `[VALORANT 對戰資料] 取得 ${matches.length} 場`
-        );
       } catch (error) {
         console.error(
           '[VALORANT 對戰查詢錯誤]:',
-          error?.message ||
-            error
+          error
         );
-
-        matches = [];
       }
 
       const modeStats =
